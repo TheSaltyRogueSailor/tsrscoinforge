@@ -82,6 +82,33 @@ Launch your coin. Build your empire. No permission needed.
   <h2>Stay Connected</h2>
   <a href="https://t.me/TheSaltyRogueSailor" class="btn">Join Telegram</a>
 </div>
+<script>
+const API_URL = "https://example.com";
 
+async function handleLaunch() {
+  try {
+    const res = await fetch(`${API_URL}/launch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "TSRS Test Coin",
+        symbol: "TSRS",
+        supply: 1000000,
+      }),
+    });
+
+    if (!res.ok) throw new Error("fail");
+
+    const data = await res.json();
+    console.log(data);
+    alert("Coin Launched ⚓");
+  } catch (err) {
+    console.error(err);
+    alert("Launch Failed");
+  }
+}
+</script>
 </body>
 </html>
