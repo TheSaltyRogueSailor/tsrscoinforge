@@ -87,7 +87,7 @@ const API_URL = "https://example.com";
 
 async function handleLaunch() {
   try {
-    const res = await fetch(`${API_URL}/launch`, {
+    const res = await fetch(API_URL + "/launch", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
