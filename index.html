@@ -85,7 +85,7 @@ Launch your coin. Build your empire. No permission needed.
 <script>
 async function handleLaunch() {
   try {
-    if (!window.solana || !window.solana.isPhantom) {
+    if (!window.solana) {
       alert("Phantom Wallet not found. Install it first.");
       window.open("https://phantom.app/", "_blank");
       return;
