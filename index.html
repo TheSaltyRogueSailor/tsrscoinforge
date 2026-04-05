@@ -83,32 +83,32 @@ Launch your coin. Build your empire. No permission needed.
   <a href="https://t.me/TheSaltyRogueSailor" class="btn">Join Telegram</a>
 </div>
 <script>
-const API_URL = "https://example.com";
-
 async function handleLaunch() {
   try {
-    const res = await fetch(API_URL + "/launch", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: "TSRS Test Coin",
-        symbol: "TSRS",
-        supply: 1000000,
-      }),
-    });
+    if (!window.solana || !window.solana.isPhantom) {
+      alert("Phantom Wallet not found. Install it first.");
+      window.open("https://phantom.app/", "_blank");
+      return;
+    }
 
-    if (!res.ok) throw new Error("fail");
+    const resp = await window.solana.connect();
+    const publicKey = resp.publicKey.toString();
 
-    const data = await res.json();
-    console.log(data);
-    alert("Coin Launched ⚓");
+    console.log("Connected wallet:", publicKey);
+
+    alert("Wallet Connected ⚓\nPreparing Launch...");
+
+    setTimeout(() => {
+      alert("🚀 Launch Ready (Next step = real token creation)");
+    }, 1000);
+
   } catch (err) {
     console.error(err);
     alert("Launch Failed");
   }
 }
+
+
 </script>
 </body>
 </html>
