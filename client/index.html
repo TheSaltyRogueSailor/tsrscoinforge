@@ -1,114 +1,12 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>TSRS Coin Forge</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      background: #0a0a0f;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
-    }
-
-    h1 {
-      color: #9b5cff;
-      font-size: 34px;
-    }
-
-    p {
-      color: #ccc;
-      font-size: 18px;
-      max-width: 600px;
-      margin: auto;
-    }
-
-    .btn {
-      display: inline-block;
-      margin-top: 25px;
-      padding: 15px 25px;
-      background: linear-gradient(90deg, #9b5cff, #00e0ff);
-      color: black;
-      font-weight: bold;
-      border-radius: 10px;
-      text-decoration: none;
-      font-size: 18px;
-    }
-
-    .section {
-      margin-top: 50px;
-    }
-  </style>
-</head>
-
-<body>
-
-<h1>⚓ TSRS Coin Forge</h1>
-
-<p>
-Launch your coin. Build your empire. No permission needed.
-</p>
-
-<a href="https://tsrs-coin-3umqk3tb.manus.space" class="btn">🔥 Enter The Forge</a>
-
-<div class="section">
-  <h2>What is TSRS?</h2>
-  <p>
-    TSRS Coin Forge is your gateway into the next wave of meme coins,
-    powered by The Salty Rogue Sailor ecosystem.
-  </p>
-</div>
-
-<div class="section">
-  <h2>Why It Matters</h2>
-  <p>
-    No gatekeepers. No delays. Just creation, speed, and opportunity.
-  </p>
-</div>
-<div class="section">
-  <h2>Launch Your Coin</h2>
-  <p>
-    Create your own meme coin in minutes. No coding. No gatekeepers.
-    Powered by the TSRS ecosystem.
-  </p>
-
-  <button onclick="handleLaunch()">
-🔥 Start Your Launch
-  </button>
-</div>
-<div class="section">
-  <h2>Stay Connected</h2>
-  <a href="https://t.me/TheSaltyRogueSailor" class="btn">Join Telegram</a>
-</div>
-<script>
-async function handleLaunch() {
-  try {
-    if (!window.solana) {
-      alert("Open this site inside Phantom Wallet browser ⚓");
-      window.open("https://phantom.app/", "_blank");
-      return;
-    }
-
-    const resp = await window.solana.connect();
-    const publicKey = resp.publicKey.toString();
-
-    console.log("Connected wallet:", publicKey);
-
-    alert("Wallet Connected ⚓\nPreparing Launch...");
-
-    setTimeout(() => {
-      alert("🚀 Launch Ready (Next step = real token creation)");
-    }, 1000);
-
-  } catch (err) {
-    console.error(err);
-    alert("Launch Failed");
-  }
-}
-
-
-</script>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TSRS Coin Forge</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
