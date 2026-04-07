@@ -1,7 +1,7 @@
 document.body.innerHTML = `
   <h1>TSRS Coin Forge 🚀</h1>
   <p>Frontend is LIVE</p>
-
+ 
   <button id="connectWallet">Connect Phantom Wallet</button>
   <p id="walletAddress"></p>
 
