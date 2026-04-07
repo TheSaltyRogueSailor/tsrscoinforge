@@ -66,10 +66,18 @@ createBtn.onclick = async () => {
     createStatus.innerText = "Preparing payment..."
 
     // ✅ FIXED RPC (NO MORE 403)
-    const connection = new solanaWeb3.Connection(
-      "https://api.mainnet-beta.solana.com",
-      "confirmed"
-    )
+    // 🚀 USE YOUR BACKEND API (NO MORE 403)
+const blockhashRes = await fetch("/api/blockhash")
+const blockhashData = await blockhashRes.json()
+
+if (!blockhashData.blockhash) {
+  throw new Error("Failed to get blockhash")
+}
+
+const connection = new solanaWeb3.Connection(
+  "https://api.mainnet-beta.solana.com",
+  "confirmed"
+)
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
@@ -81,7 +89,7 @@ createBtn.onclick = async () => {
 
     transaction.feePayer = provider.publicKey
 
-    const { blockhash } = await connection.getLatestBlockhash()
+    const blockhash = blockhashData.blockhash
     transaction.recentBlockhash = blockhash
 
     const signed = await provider.signTransaction(transaction)
