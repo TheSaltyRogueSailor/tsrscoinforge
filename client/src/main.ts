@@ -23,7 +23,7 @@ const walletText = document.getElementById("walletAddress") as HTMLParagraphElem
 const createCoinBtn = document.getElementById("createCoin") as HTMLButtonElement
 const createStatus = document.getElementById("createStatus") as HTMLParagraphElement
 
-const RECEIVER_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVd"
+const RECEIVER_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 10_000_000 // 0.01 SOL
 
 button.onclick = async () => {
