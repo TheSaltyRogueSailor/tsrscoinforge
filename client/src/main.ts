@@ -22,7 +22,7 @@ const createBtn = document.getElementById("createCoin") as HTMLButtonElement
 const createStatus = document.getElementById("createStatus") as HTMLParagraphElement
 
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
-const FEE_LAMPORTS = 10000000 // 0.01 SOL
+const FEE_LAMPORTS = 50000000 // 0.05 SOL
 
 let provider: any = null
 
