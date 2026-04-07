@@ -96,14 +96,11 @@ const connection = new solanaWeb3.Connection(
     const signature = await connection.sendRawTransaction(signed.serialize())
 
     await connection.confirmTransaction(signature)
-
-    createStatus.innerText = "✅ Payment successful! Coin creation coming next..."
-  } catch (err: any) {
-    console.error(err)
-    createStatus.innerHTML = `
-  ✅ Payment sent!<br />
-  Token Name: ${tokenName}<br />
-  Symbol: ${tokenSymbol}<br />
-  Supply: ${tokenSupply}<br />
-  TX: ${signature}
+createStatus.innerHTML = `
+✅ Payment sent!<br />
+Token Name: ${tokenName}<br />
+Symbol: ${tokenSymbol}<br />
+Supply: ${tokenSupply}<br />
+TX: ${signature}
 `
+    
