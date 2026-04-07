@@ -22,7 +22,7 @@ const button = document.getElementById("connectWallet")!
 const walletText = document.getElementById("walletAddress")!
 const createCoinBtn = document.getElementById("createCoin")!
 const createStatus = document.getElementById("createStatus")!
-
+const RECEIVER_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVd"
 button.onclick = async () => {
   const provider = (window as any).solana
 
