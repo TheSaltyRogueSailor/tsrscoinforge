@@ -1,4 +1,4 @@
 document.body.innerHTML = `
-  <h1>TSRS Coin Forge 🚀</h1>
-  <p>Frontend is LIVE</p>
+<h1>TSRS Coin Forge 🚀</h1>
+<p>Frontend is LIVE</p>
 `
