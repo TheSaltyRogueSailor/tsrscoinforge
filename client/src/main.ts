@@ -133,7 +133,6 @@ const signedMintTx = await provider.signTransaction(mintTx)
 const mintSignature = await connection.sendRawTransaction(signedMintTx.serialize())
 
 await connection.confirmTransaction(mintSignature)
-
 createStatus.innerHTML = `
 ✅ Payment + Mint Successful<br />
 🪙 Token: ${mintKeypair.publicKey.toString()}<br />
@@ -141,4 +140,3 @@ Name: ${tokenName}<br />
 Symbol: ${tokenSymbol}<br />
 Supply: ${tokenSupply}
 
-    
