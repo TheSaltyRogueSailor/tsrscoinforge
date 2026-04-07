@@ -96,11 +96,44 @@ const connection = new solanaWeb3.Connection(
     const signature = await connection.sendRawTransaction(signed.serialize())
 
     await connection.confirmTransaction(signature)
-createStatus.innerHTML = `
-✅ Payment sent!<br />
-Token Name: ${tokenName}<br />
-Symbol: ${tokenSymbol}<br />
-Supply: ${tokenSupply}<br />
-TX: ${signature}
+// 🚀 CREATE TOKEN (SPL MINT)
+
+const mintKeypair = solanaWeb3.Keypair.generate()
+
+const lamportsForMint = await connection.getMinimumBalanceForRentExemption(82)
+
+const createMintIx = solanaWeb3.SystemProgram.createAccount({
+  fromPubkey: provider.publicKey,
+  newAccountPubkey: mintKeypair.publicKey,
+  space: 82,
+  lamports: lamportsForMint,
+  programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+})
+
+const initMintIx = new solanaWeb3.TransactionInstruction({
+  keys: [
+    { pubkey: mintKeypair.publicKey, isSigner: false, isWritable: true },
+    { pubkey: provider.publicKey, isSigner: false, isWritable: false }
+  ],
+  programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+  data: Uint8Array.from([0, 9, 0, 0, 0, ...provider.publicKey.toBytes(), 0])
+})
+
+const mintTx = new solanaWeb3.Transaction().add(createMintIx, initMintIx)
+
+mintTx.feePayer = provider.publicKey
+
+const { blockhash: mintBlockhash } = await connection.getLatestBlockhash()
+mintTx.recentBlockhash = mintBlockhash
+
+mintTx.partialSign(mintKeypair)
+
+const signedMintTx = await provider.signTransaction(mintTx)
+
+const mintSignature = await connection.sendRawTransaction(signedMintTx.serialize())
+
+await connection.confirmTransaction(mintSignature)
+
+createStatus.innerHTML += `<br/>🪙 Token Minted: ${mintKeypair.publicKey.toString()}`
 `
     
