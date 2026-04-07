@@ -140,6 +140,5 @@ createStatus.innerHTML = `
 Name: ${tokenName}<br />
 Symbol: ${tokenSymbol}<br />
 Supply: ${tokenSupply}
-`
-`
+
     
