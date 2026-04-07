@@ -67,9 +67,9 @@ createCoinBtn.onclick = async () => {
     createStatus.innerText = "Preparing payment..."
 
     const connection = new solanaWeb3.Connection(
-      "https://solana-rpc.publicnode.com"
-      "confirmed"
-    )
+  "https://solana-rpc.publicnode.com",
+  "confirmed"
+)
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
