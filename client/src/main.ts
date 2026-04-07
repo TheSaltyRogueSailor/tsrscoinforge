@@ -67,7 +67,7 @@ createBtn.onclick = async () => {
 
     // ✅ FIXED RPC (NO MORE 403)
     const connection = new solanaWeb3.Connection(
-      "https://rpc.ankr.com/solana",
+      "https://api.mainnet-beta.solana.com",
       "confirmed"
     )
 
