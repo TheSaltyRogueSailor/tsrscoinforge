@@ -27,15 +27,20 @@ const RECEIVER_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 10_000_000 // 0.01 SOL
 
 button.onclick = async () => {
-  const provider = (window as any).solana
+  try {
+    const provider = (window as any).solana
 
-  if (!provider || !provider.isPhantom) {
-    alert("Open this inside Phantom browser.")
-    return
+    if (!provider || !provider.isPhantom) {
+      alert("Open this inside Phantom browser.")
+      return
+    }
+
+    const resp = await provider.connect()
+    walletText.innerText = "Connected: " + resp.publicKey.toString()
+  } catch (err: any) {
+    walletText.innerText = "Error: " + (err?.message || "Wallet connection failed")
+    console.error(err)
   }
-
-  const resp = await provider.connect()
-  walletText.innerText = "Connected: " + resp.publicKey.toString()
 }
 
 createCoinBtn.onclick = async () => {
@@ -49,7 +54,7 @@ createCoinBtn.onclick = async () => {
     }
 
     if (!solanaWeb3) {
-      alert("Solana web3 failed to load.")
+      createStatus.innerText = "Error: Solana web3 failed to load."
       return
     }
 
@@ -67,9 +72,9 @@ createCoinBtn.onclick = async () => {
     createStatus.innerText = "Preparing payment..."
 
     const connection = new solanaWeb3.Connection(
-  "https://solana-rpc.publicnode.com",
-  "confirmed"
-)
+      "https://solana-rpc.publicnode.com",
+      "confirmed"
+    )
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
@@ -81,8 +86,8 @@ createCoinBtn.onclick = async () => {
 
     transaction.feePayer = provider.publicKey
 
-    const latestBlockhash = await connection.getLatestBlockhash()
-    transaction.recentBlockhash = latestBlockhash.blockhash
+    const { blockhash } = await connection.getLatestBlockhash("confirmed")
+    transaction.recentBlockhash = blockhash
 
     const signed = await provider.signTransaction(transaction)
     const signature = await connection.sendRawTransaction(signed.serialize())
