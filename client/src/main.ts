@@ -100,6 +100,10 @@ const connection = new solanaWeb3.Connection(
     createStatus.innerText = "✅ Payment successful! Coin creation coming next..."
   } catch (err: any) {
     console.error(err)
-    createStatus.innerText = "Error: " + err.message
-  }
-}
+    createStatus.innerHTML = `
+  ✅ Payment sent!<br />
+  Token Name: ${tokenName}<br />
+  Symbol: ${tokenSymbol}<br />
+  Supply: ${tokenSupply}<br />
+  TX: ${signature}
+`
