@@ -1,67 +1,97 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>TSRS Coin Forge 🚀</title>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-</head>
+document.body.innerHTML = `
+  <h1>TSRS Coin Forge 🚀</h1>
+  <p>Frontend is LIVE</p>
 
-<body style="background:black;color:white;font-family:sans-serif;padding:20px">
+  <button id="connectWallet">Connect Phantom Wallet</button>
+  <p id="walletAddress"></p>
 
-<h1>TSRS Coin Forge 🚀</h1>
+  <hr />
 
-<button id="connectWallet">Connect Phantom Wallet</button>
-<p id="walletAddress"></p>
+  <h2>Create Coin</h2>
 
-<hr>
+  <input id="tokenName" placeholder="Token Name" />
+  <br /><br />
 
-<h2>Create Coin</h2>
+  <input id="tokenSymbol" placeholder="Token Symbol" />
+  <br /><br />
 
-<input id="tokenName" placeholder="Token Name" /><br><br>
-<input id="tokenSymbol" placeholder="Symbol" /><br><br>
-<input id="tokenSupply" placeholder="Supply" /><br><br>
+  <input id="tokenSupply" placeholder="Total Supply" />
+  <br /><br />
 
-<button id="createCoin">Create Coin</button>
+  <button id="createCoin">Create Coin</button>
+  <p id="createStatus"></p>
+`
 
-<p id="createStatus"></p>
-
-<script>
-const connectBtn = document.getElementById("connectWallet")
-const walletAddress = document.getElementById("walletAddress")
-const createBtn = document.getElementById("createCoin")
-const createStatus = document.getElementById("createStatus")
+const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement
+const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement
+const createBtn = document.getElementById("createCoin") as HTMLButtonElement
+const createStatus = document.getElementById("createStatus") as HTMLParagraphElement
 
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50000000
-
 const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
 
-const connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
+let provider: any = null
+let solanaWeb3: any = null
+let connection: any = null
 
-let provider = null
+function getErrorMessage(err: any): string {
+  if (!err) return "Unknown error"
+  if (typeof err === "string") return err
+  if (err.message) return err.message
+  try {
+    return JSON.stringify(err)
+  } catch {
+    return "Unknown error"
+  }
+}
 
 connectBtn.onclick = async () => {
-  provider = window.solana
+  try {
+    provider = (window as any).solana
 
-  if (!provider || !provider.isPhantom) {
-    alert("Open inside Phantom browser")
-    return
+    if (!provider || !provider.isPhantom) {
+      alert("Open this site inside Phantom browser.")
+      return
+    }
+
+    const resp = await provider.connect()
+    walletAddress.innerText = "Connected: " + resp.publicKey.toString()
+  } catch (err: any) {
+    walletAddress.innerText =
+      "Wallet connection failed: " + getErrorMessage(err)
   }
-
-  const resp = await provider.connect()
-  walletAddress.innerText = "Connected: " + resp.publicKey.toString()
 }
 
 createBtn.onclick = async () => {
   try {
-    if (!provider) return alert("Connect wallet first")
+    provider = (window as any).solana
+    solanaWeb3 = (window as any).solanaWeb3
 
-    const tokenName = document.getElementById("tokenName").value
-    const tokenSymbol = document.getElementById("tokenSymbol").value
-    const tokenSupply = document.getElementById("tokenSupply").value
+    if (!provider || !provider.isPhantom) {
+      createStatus.innerText = "Open this site inside Phantom browser."
+      return
+    }
 
-    createStatus.innerText = "Processing payment..."
+    if (!solanaWeb3) {
+      createStatus.innerText = "Solana web3 not loaded."
+      return
+    }
 
-    const tx = new solanaWeb3.Transaction().add(
+    const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim()
+    const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim()
+    const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim()
+
+    if (!tokenName || !tokenSymbol || !tokenSupply) {
+      createStatus.innerText = "Fill all fields."
+      return
+    }
+
+    await provider.connect()
+
+    connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
+
+    const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
         fromPubkey: provider.publicKey,
         toPubkey: new solanaWeb3.PublicKey(RECEIVER),
@@ -69,30 +99,26 @@ createBtn.onclick = async () => {
       })
     )
 
-    const { blockhash } = await connection.getLatestBlockhash()
-    tx.recentBlockhash = blockhash
-    tx.feePayer = provider.publicKey
+    const latestBlockhash = await connection.getLatestBlockhash("confirmed")
+    transaction.recentBlockhash = latestBlockhash.blockhash
+    transaction.feePayer = provider.publicKey
 
-    const signed = await provider.signAndSendTransaction(tx)
+    createStatus.innerText = "Waiting for Phantom confirmation..."
 
-    createStatus.innerText = "Confirming..."
-
-    await connection.confirmTransaction(signed.signature, "confirmed")
+    const result = await provider.signAndSendTransaction(transaction)
+    const signature =
+      typeof result === "string" ? result : result.signature
 
     createStatus.innerHTML = `
-    ✅ Payment sent!<br/>
-    Name: ${tokenName}<br/>
-    Symbol: ${tokenSymbol}<br/>
-    Supply: ${tokenSupply}<br/>
-    TX: ${signed.signature}
-    `
-
-  } catch (err) {
+✅ Payment sent!<br />
+Token Name: ${tokenName}<br />
+Symbol: ${tokenSymbol}<br />
+Supply: ${tokenSupply}<br />
+TX: ${signature}
+`
+  } catch (err: any) {
     console.error(err)
-    createStatus.innerText = "Error: " + err.message
+    createStatus.innerText =
+      "Error: " + getErrorMessage(err)
   }
 }
-</script>
-
-</body>
-</html>
