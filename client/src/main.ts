@@ -30,6 +30,9 @@ const createStatus = document.getElementById("createStatus") as HTMLParagraphEle
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50000000 // 0.05 SOL
 
+// IMPORTANT: replace this with your private Solana mainnet RPC URL
+const RPC_URL = "https://api.mainnet-beta.solana.com"
+
 let provider: any = null
 
 connectBtn.onclick = async () => {
@@ -44,7 +47,8 @@ connectBtn.onclick = async () => {
     const resp = await provider.connect()
     walletAddress.innerText = "Connected: " + resp.publicKey.toString()
   } catch (err: any) {
-    walletAddress.innerText = "Wallet connection failed: " + (err?.message || "Unknown error")
+    walletAddress.innerText =
+      "Wallet connection failed: " + (err?.message || "Unknown error")
   }
 }
 
@@ -63,6 +67,11 @@ createBtn.onclick = async () => {
       return
     }
 
+    if (!RPC_URL || RPC_URL.includes("PASTE_YOUR_PRIVATE_RPC_URL_HERE")) {
+      createStatus.innerText = "Set your private RPC URL in main.ts first."
+      return
+    }
+
     const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim()
     const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim()
     const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim()
@@ -74,10 +83,7 @@ createBtn.onclick = async () => {
 
     await provider.connect()
 
-    const connection = new solanaWeb3.Connection(
-      "https://api.mainnet-beta.solana.com",
-      "confirmed"
-    )
+    const connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
@@ -117,6 +123,7 @@ TX: ${signature}
 `
   } catch (err: any) {
     console.error(err)
-    createStatus.innerText = "Error: " + (err?.message || JSON.stringify(err))
+    createStatus.innerText =
+      "Error: " + (err?.message || JSON.stringify(err))
   }
 }
