@@ -92,34 +92,14 @@ const connection = new solanaWeb3.Connection(
     const blockhash = blockhashData.blockhash
     transaction.recentBlockhash = blockhash
 
-    const signed = await provider.signTransaction(transaction)
-    const signature = await connection.sendRawTransaction(signed.serialize())
-
-    await connection.confirmTransaction(signature)
-// 🚀 CREATE TOKEN (SPL MINT)
-
-const mintKeypair = solanaWeb3.Keypair.generate()
-
-const lamportsForMint = await connection.getMinimumBalanceForRentExemption(82)
-
-const createMintIx = solanaWeb3.SystemProgram.createAccount({
-  fromPubkey: provider.publicKey,
-  newAccountPubkey: mintKeypair.publicKey,
-  space: 82,
-  lamports: lamportsForMint,
-  programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-})
-
-const signed = await provider.signTransaction(transaction)
-
-const signature = await provider.request({
+    const signature = await provider.request({
   method: "signAndSendTransaction",
   params: {
-    message: signed.serialize({ requireAllSignatures: false }).toString("base64"),
-  },
+    message: transaction.serialize({ requireAllSignatures: false })
+  }
 })
 
-await connection.confirmTransaction(signature)
+    await connection.confirmTransaction(signature)
 
 createStatus.innerHTML = `
 ✅ Payment sent!<br />
