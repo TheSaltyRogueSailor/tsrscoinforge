@@ -110,14 +110,7 @@ createBtn.onclick = async () => {
 
     createStatus.innerText = "Confirming payment..."
 
-    await connection.confirmTransaction(
-      {
-        signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      },
-      "confirmed"
-    )
+    await connection.confirmTransaction(signature, "confirmed")
 
     createStatus.innerHTML = `
 ✅ Payment sent!<br />
