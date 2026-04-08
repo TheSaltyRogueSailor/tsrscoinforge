@@ -31,7 +31,12 @@ const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50000000 // 0.05 SOL
 
 // IMPORTANT: replace this with your private Solana mainnet RPC URL
-const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/demo"
+const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
+
+const connection = new solanaWeb3.Connection(
+  RPC_URL,
+  "confirmed"
+)
 
 let provider: any = null
 
