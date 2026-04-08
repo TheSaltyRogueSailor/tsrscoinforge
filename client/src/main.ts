@@ -110,27 +110,14 @@ const createMintIx = solanaWeb3.SystemProgram.createAccount({
   programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 })
 
-const initMintIx = new solanaWeb3.TransactionInstruction({
-  keys: [
-    { pubkey: mintKeypair.publicKey, isSigner: false, isWritable: true },
-    { pubkey: provider.publicKey, isSigner: false, isWritable: false }
-  ],
-  programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-  data: Uint8Array.from([0, 9, 0, 0, 0, ...provider.publicKey.toBytes(), 0])
+const signed = await provider.signTransaction(transaction)
+
+const signature = await provider.request({
+  method: "signAndSendTransaction",
+  params: {
+    message: signed.serialize({ requireAllSignatures: false }).toString("base64"),
+  },
 })
-
-const mintTx = new solanaWeb3.Transaction().add(createMintIx, initMintIx)
-
-mintTx.feePayer = provider.publicKey
-
-const { blockhash: mintBlockhash } = await connection.getLatestBlockhash()
-mintTx.recentBlockhash = mintBlockhash
-
-mintTx.partialSign(mintKeypair)
-
-const signedMintTx = await provider.signTransaction(mintTx)
-
-const mintSignature = await connection.sendRawTransaction(signedMintTx.serialize())
 
 await connection.confirmTransaction(signature)
 
