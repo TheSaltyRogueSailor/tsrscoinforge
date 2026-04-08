@@ -30,15 +30,41 @@ const createStatus = document.getElementById("createStatus") as HTMLParagraphEle
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50000000 // 0.05 SOL
 
-// IMPORTANT: replace this with your private Solana mainnet RPC URL
+// Your private Alchemy Solana mainnet RPC
 const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
 
-const connection = new solanaWeb3.Connection(
-  RPC_URL,
-  "confirmed"
-)
-
 let provider: any = null
+let solanaWeb3: any = null
+let connection: any = null
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function waitForSignature(signature: string) {
+  // Poll for up to ~60 seconds without throwing fake timeout errors
+  for (let i = 0; i < 20; i++) {
+    const response = await connection.getSignatureStatuses([signature])
+    const status = response?.value?.[0]
+
+    if (status) {
+      if (status.err) {
+        throw new Error("Transaction failed on-chain.")
+      }
+
+      if (
+        status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized"
+      ) {
+        return "confirmed"
+      }
+    }
+
+    await sleep(3000)
+  }
+
+  return "submitted"
+}
 
 connectBtn.onclick = async () => {
   try {
@@ -60,7 +86,7 @@ connectBtn.onclick = async () => {
 createBtn.onclick = async () => {
   try {
     provider = (window as any).solana
-    const solanaWeb3 = (window as any).solanaWeb3
+    solanaWeb3 = (window as any).solanaWeb3
 
     if (!provider || !provider.isPhantom) {
       createStatus.innerText = "Open this site inside Phantom browser."
@@ -69,11 +95,6 @@ createBtn.onclick = async () => {
 
     if (!solanaWeb3) {
       createStatus.innerText = "Solana web3 not loaded."
-      return
-    }
-
-    if (!RPC_URL || RPC_URL.includes("PASTE_YOUR_PRIVATE_RPC_URL_HERE")) {
-      createStatus.innerText = "Set your private RPC URL in main.ts first."
       return
     }
 
@@ -88,7 +109,7 @@ createBtn.onclick = async () => {
 
     await provider.connect()
 
-    const connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
+    connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
@@ -108,23 +129,30 @@ createBtn.onclick = async () => {
     const signature =
       typeof result === "string" ? result : result.signature
 
-    createStatus.innerText = "Confirming payment..."
+    createStatus.innerText = "Processing payment..."
 
-    await connection.confirmTransaction({
-  signature,
-  ...(await connection.getLatestBlockhash())
-})
+    const finalStatus = await waitForSignature(signature)
 
-    createStatus.innerHTML = `
+    if (finalStatus === "confirmed") {
+      createStatus.innerHTML = `
 ✅ Payment sent!<br />
 Token Name: ${tokenName}<br />
 Symbol: ${tokenSymbol}<br />
 Supply: ${tokenSupply}<br />
 TX: ${signature}
 `
+    } else {
+      createStatus.innerHTML = `
+🟡 Payment submitted and still confirming.<br />
+Token Name: ${tokenName}<br />
+Symbol: ${tokenSymbol}<br />
+Supply: ${tokenSupply}<br />
+TX: ${signature}
+`
+    }
   } catch (err: any) {
     console.error(err)
     createStatus.innerText =
       "Error: " + (err?.message || JSON.stringify(err))
   }
-}
+      }
