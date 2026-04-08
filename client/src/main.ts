@@ -8,11 +8,17 @@ document.body.innerHTML = `
   <hr />
 
   <h2>Create Coin</h2>
-  <input id="tokenName" placeholder="Token Name" /><br /><br />
-  <input id="tokenSymbol" placeholder="Token Symbol" /><br /><br />
-  <input id="tokenSupply" placeholder="Total Supply" /><br /><br />
-  <button id="createCoin">Create Coin</button>
 
+  <input id="tokenName" placeholder="Token Name" />
+  <br /><br />
+
+  <input id="tokenSymbol" placeholder="Token Symbol" />
+  <br /><br />
+
+  <input id="tokenSupply" placeholder="Total Supply" />
+  <br /><br />
+
+  <button id="createCoin">Create Coin</button>
   <p id="createStatus"></p>
 `
 
@@ -26,58 +32,52 @@ const FEE_LAMPORTS = 50000000 // 0.05 SOL
 
 let provider: any = null
 
-// CONNECT WALLET
 connectBtn.onclick = async () => {
-  provider = (window as any).solana
+  try {
+    provider = (window as any).solana
 
-  if (!provider || !provider.isPhantom) {
-    alert("Open this inside Phantom browser")
-    return
+    if (!provider || !provider.isPhantom) {
+      alert("Open this site inside Phantom browser.")
+      return
+    }
+
+    const resp = await provider.connect()
+    walletAddress.innerText = "Connected: " + resp.publicKey.toString()
+  } catch (err: any) {
+    walletAddress.innerText = "Wallet connection failed: " + (err?.message || "Unknown error")
   }
-
-  const resp = await provider.connect()
-  walletAddress.innerText = "Connected: " + resp.publicKey.toString()
 }
 
-// CREATE COIN (PAYMENT)
 createBtn.onclick = async () => {
   try {
-    if (!provider) {
-      createStatus.innerText = "Connect wallet first"
-      return
-    }
-
+    provider = (window as any).solana
     const solanaWeb3 = (window as any).solanaWeb3
 
-    if (!solanaWeb3) {
-      createStatus.innerText = "Solana web3 not loaded"
+    if (!provider || !provider.isPhantom) {
+      createStatus.innerText = "Open this site inside Phantom browser."
       return
     }
 
-    const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value
-    const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value
-    const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value
+    if (!solanaWeb3) {
+      createStatus.innerText = "Solana web3 not loaded."
+      return
+    }
+
+    const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim()
+    const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim()
+    const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim()
 
     if (!tokenName || !tokenSymbol || !tokenSupply) {
-      createStatus.innerText = "Fill all fields"
+      createStatus.innerText = "Fill all fields."
       return
     }
 
-    createStatus.innerText = "Preparing payment..."
+    await provider.connect()
 
-    // ✅ FIXED RPC (NO MORE 403)
-    // 🚀 USE YOUR BACKEND API (NO MORE 403)
-const blockhashRes = await fetch("/api/blockhash")
-const blockhashData = await blockhashRes.json()
-
-if (!blockhashData.blockhash) {
-  throw new Error("Failed to get blockhash")
-}
-
-const connection = new solanaWeb3.Connection(
-  "https://api.mainnet-beta.solana.com",
-  "confirmed"
-)
+    const connection = new solanaWeb3.Connection(
+      "https://api.mainnet-beta.solana.com",
+      "confirmed"
+    )
 
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
@@ -87,24 +87,36 @@ const connection = new solanaWeb3.Connection(
       })
     )
 
+    const latestBlockhash = await connection.getLatestBlockhash("confirmed")
+    transaction.recentBlockhash = latestBlockhash.blockhash
     transaction.feePayer = provider.publicKey
 
-    const blockhash = blockhashData.blockhash
-    transaction.recentBlockhash = blockhash
+    createStatus.innerText = "Waiting for Phantom confirmation..."
 
-    const signature = await provider.request({
-  method: "signAndSendTransaction",
-  params: {
-    message: transaction.serialize({ requireAllSignatures: false })
-  }
-})
+    const result = await provider.signAndSendTransaction(transaction)
+    const signature =
+      typeof result === "string" ? result : result.signature
 
-    await connection.confirmTransaction(signature)
+    createStatus.innerText = "Confirming payment..."
 
-createStatus.innerHTML = `
+    await connection.confirmTransaction(
+      {
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      },
+      "confirmed"
+    )
+
+    createStatus.innerHTML = `
 ✅ Payment sent!<br />
 Token Name: ${tokenName}<br />
 Symbol: ${tokenSymbol}<br />
 Supply: ${tokenSupply}<br />
 TX: ${signature}
 `
+  } catch (err: any) {
+    console.error(err)
+    createStatus.innerText = "Error: " + (err?.message || JSON.stringify(err))
+  }
+}
