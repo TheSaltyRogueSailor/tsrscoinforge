@@ -29,8 +29,6 @@ const createStatus = document.getElementById("createStatus") as HTMLParagraphEle
 
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50000000 // 0.05 SOL
-
-// Your private Alchemy Solana mainnet RPC
 const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
 
 let provider: any = null
@@ -41,29 +39,112 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function waitForSignature(signature: string) {
-  // Poll for up to ~60 seconds without throwing fake timeout errors
-  for (let i = 0; i < 20; i++) {
-    const response = await connection.getSignatureStatuses([signature])
-    const status = response?.value?.[0]
+function getErrorMessage(err: any): string {
+  if (!err) return "Unknown error"
+  if (typeof err === "string") return err
+  if (err.message) return err.message
+  try {
+    return JSON.stringify(err)
+  } catch {
+    return "Unknown error"
+  }
+}
 
-    if (status) {
-      if (status.err) {
-        throw new Error("Transaction failed on-chain.")
-      }
+async function checkSignatureStatus(signature: string) {
+  const response = await connection.getSignatureStatuses([signature])
+  return response?.value?.[0] ?? null
+}
 
-      if (
-        status.confirmationStatus === "confirmed" ||
-        status.confirmationStatus === "finalized"
-      ) {
-        return "confirmed"
-      }
+async function confirmOrRetry(signature: string, latestBlockhash: any) {
+  try {
+    await connection.confirmTransaction(
+      {
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      },
+      "confirmed"
+    )
+    return "confirmed"
+  } catch (err: any) {
+    const status = await checkSignatureStatus(signature)
+
+    if (
+      status &&
+      (status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized")
+    ) {
+      return "confirmed"
     }
 
-    await sleep(3000)
+    const msg = getErrorMessage(err).toLowerCase()
+
+    if (
+      msg.includes("block height exceeded") ||
+      msg.includes("expired") ||
+      msg.includes("not confirmed in 30.00 seconds")
+    ) {
+      return "retry"
+    }
+
+    throw err
+  }
+}
+
+async function sendFeeTransaction(tokenName: string, tokenSymbol: string, tokenSupply: string) {
+  let lastSignature = ""
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    createStatus.innerText =
+      attempt === 1
+        ? "Waiting for Phantom confirmation..."
+        : "Retrying payment with fresh blockhash..."
+
+    const latestBlockhash = await connection.getLatestBlockhash("confirmed")
+
+    const transaction = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({
+        fromPubkey: provider.publicKey,
+        toPubkey: new solanaWeb3.PublicKey(RECEIVER),
+        lamports: FEE_LAMPORTS,
+      })
+    )
+
+    transaction.recentBlockhash = latestBlockhash.blockhash
+    transaction.feePayer = provider.publicKey
+
+    const result = await provider.signAndSendTransaction(transaction)
+    const signature =
+      typeof result === "string" ? result : result.signature
+
+    lastSignature = signature
+
+    createStatus.innerText =
+      attempt === 1 ? "Confirming payment..." : "Confirming retried payment..."
+
+    const outcome = await confirmOrRetry(signature, latestBlockhash)
+
+    if (outcome === "confirmed") {
+      createStatus.innerHTML = `
+✅ Payment sent!<br />
+Token Name: ${tokenName}<br />
+Symbol: ${tokenSymbol}<br />
+Supply: ${tokenSupply}<br />
+TX: ${signature}
+`
+      return
+    }
+
+    await sleep(1200)
   }
 
-  return "submitted"
+  createStatus.innerHTML = `
+🟡 Payment submitted but final confirmation timed out.<br />
+Token Name: ${tokenName}<br />
+Symbol: ${tokenSymbol}<br />
+Supply: ${tokenSupply}<br />
+TX: ${lastSignature}
+`
 }
 
 connectBtn.onclick = async () => {
@@ -79,7 +160,7 @@ connectBtn.onclick = async () => {
     walletAddress.innerText = "Connected: " + resp.publicKey.toString()
   } catch (err: any) {
     walletAddress.innerText =
-      "Wallet connection failed: " + (err?.message || "Unknown error")
+      "Wallet connection failed: " + getErrorMessage(err)
   }
 }
 
@@ -108,51 +189,11 @@ createBtn.onclick = async () => {
     }
 
     await provider.connect()
-
     connection = new solanaWeb3.Connection(RPC_URL, "confirmed")
 
-    const transaction = new solanaWeb3.Transaction().add(
-      solanaWeb3.SystemProgram.transfer({
-        fromPubkey: provider.publicKey,
-        toPubkey: new solanaWeb3.PublicKey(RECEIVER),
-        lamports: FEE_LAMPORTS,
-      })
-    )
-
-    const latestBlockhash = await connection.getLatestBlockhash("confirmed")
-    transaction.recentBlockhash = latestBlockhash.blockhash
-    transaction.feePayer = provider.publicKey
-
-    createStatus.innerText = "Waiting for Phantom confirmation..."
-
-    const result = await provider.signAndSendTransaction(transaction)
-    const signature =
-      typeof result === "string" ? result : result.signature
-
-    createStatus.innerText = "Processing payment..."
-
-    const finalStatus = await waitForSignature(signature)
-
-    if (finalStatus === "confirmed") {
-      createStatus.innerHTML = `
-✅ Payment sent!<br />
-Token Name: ${tokenName}<br />
-Symbol: ${tokenSymbol}<br />
-Supply: ${tokenSupply}<br />
-TX: ${signature}
-`
-    } else {
-      createStatus.innerHTML = `
-🟡 Payment submitted and still confirming.<br />
-Token Name: ${tokenName}<br />
-Symbol: ${tokenSymbol}<br />
-Supply: ${tokenSupply}<br />
-TX: ${signature}
-`
-    }
+    await sendFeeTransaction(tokenName, tokenSymbol, tokenSupply)
   } catch (err: any) {
     console.error(err)
-    createStatus.innerText =
-      "Error: " + (err?.message || JSON.stringify(err))
+    createStatus.innerText = "Error: " + getErrorMessage(err)
   }
-      }
+}
