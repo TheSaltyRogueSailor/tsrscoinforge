@@ -18,6 +18,38 @@ document.body.innerHTML = `
   <input id="tokenSupply" placeholder="Total Supply" type="number" min="1" />
   <br /><br />
 
+  <textarea id="tokenDescription" placeholder="Coin Description" rows="4" cols="50"></textarea>
+  <br /><br />
+
+  <label for="tokenImage">Coin Image:</label>
+  <input id="tokenImage" type="file" accept="image/*" />
+  <br /><br />
+
+  <button id="createCoin">Create Coin</button>
+  <p id="createStatus"></p>
+
+  <div id="coinResult" style="display:none; margin-top:16px;">
+    <h3>Coin Created ✅</h3>
+    <p id="resultName"></p>
+    <p id="resultSymbol"></p>
+    <p id="resultSupply"></p>
+    <p id="resultCA"></p>
+    <p id="resultFeeTx"></p>
+    <p id="resultMintTx"></p>
+    <p id="resultMetadataUri"></p>
+    <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
+  </div>
+`
+
+  <input id="tokenName" placeholder="Token Name" />
+  <br /><br />
+
+  <input id="tokenSymbol" placeholder="Token Symbol" maxlength="10" />
+  <br /><br />
+
+  <input id="tokenSupply" placeholder="Total Supply" type="number" min="1" />
+  <br /><br />
+
   <button id="createCoin">Create Coin</button>
   <p id="createStatus"></p>
 
