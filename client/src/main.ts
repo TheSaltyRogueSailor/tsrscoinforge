@@ -76,7 +76,8 @@ const resultSupply = document.getElementById("resultSupply") as HTMLParagraphEle
 const resultCA = document.getElementById("resultCA") as HTMLParagraphElement
 const resultFeeTx = document.getElementById("resultFeeTx") as HTMLParagraphElement
 const resultMintTx = document.getElementById("resultMintTx") as HTMLParagraphElement
-
+const resultMetadataUri = document.getElementById("resultMetadataUri") as HTMLParagraphElement
+const resultImage = document.getElementById("resultImage") as HTMLImageElement
 const RECEIVER = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
 const FEE_LAMPORTS = 50_000_000
 const RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ"
