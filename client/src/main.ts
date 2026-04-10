@@ -222,7 +222,10 @@ const imageFile = tokenImageInput.files?.[0]
       createStatus.innerText = "Fill all fields."
       return
     }
-
+if (!imageFile) {
+  createStatus.innerText = "Upload a coin image."
+  return
+}
     const parsedSupply = Number(tokenSupply)
     if (!Number.isFinite(parsedSupply) || parsedSupply <= 0) {
       createStatus.innerText = "Supply must be a valid number greater than 0."
