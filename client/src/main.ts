@@ -210,11 +210,15 @@ createBtn.onclick = async () => {
     coinResult.style.display = "none"
     createStatus.innerText = ""
 
-    const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim()
-    const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim().toUpperCase()
-    const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim()
+  
+const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim()
+const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim().toUpperCase()
+const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim()
 
-    if (!tokenName || !tokenSymbol || !tokenSupply) {
+const tokenDescription = (document.getElementById("tokenDescription") as HTMLTextAreaElement).value.trim()
+const tokenImageInput = document.getElementById("tokenImage") as HTMLInputElement
+const imageFile = tokenImageInput.files?.[0]
+   if (!tokenName || !tokenSymbol || !tokenSupply || !tokenDescription) {
       createStatus.innerText = "Fill all fields."
       return
     }
