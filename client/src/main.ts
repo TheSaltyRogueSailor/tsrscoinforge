@@ -92,7 +92,8 @@ document.getElementById("connectWallet")?.addEventListener("click", async () => 
 })
 
 document.getElementById("createCoin")?.addEventListener("click", async () => {
-  const paid = await sendLaunchFee()
+ alert("CLICK WORKED") 
+   const paid = await sendLaunchFee()
   if (!paid) return
 
   const name = (document.getElementById("tokenName") as HTMLInputElement).value
