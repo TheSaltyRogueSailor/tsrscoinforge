@@ -1,5 +1,10 @@
-"scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview"
+{
+  "name": "tsrscoinforge-client",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
 }
