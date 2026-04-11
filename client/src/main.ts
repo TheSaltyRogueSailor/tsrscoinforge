@@ -76,7 +76,7 @@ document.body.innerHTML = `
     <p id="resultCA"></p>
     <img id="resultImage" style="max-width:200px; display:none;" />
   </div>
-`
+`;
 
 const provider = (window as any).solana
 
@@ -98,7 +98,6 @@ document.getElementById("createCoin")?.addEventListener("click", async () => {
   const name = (document.getElementById("tokenName") as HTMLInputElement).value
   const symbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value
   const supply = (document.getElementById("tokenSupply") as HTMLInputElement).value
-  const desc = (document.getElementById("tokenDescription") as HTMLTextAreaElement).value
   const file = (document.getElementById("tokenImage") as HTMLInputElement).files?.[0]
 
   document.getElementById("createStatus")!.innerText =
