@@ -6,7 +6,7 @@ import {
   LAMPORTS_PER_SOL
 } from "@solana/web3.js";
 
-const ALCHEMY_RPC_URL = "VpKm0MUizuIShAsvvW2rJ";
+const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
 const LAUNCH_FEE_SOL = 0.1;
 
