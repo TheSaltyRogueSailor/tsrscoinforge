@@ -1,50 +1,7 @@
-const ALCHEMY_RPC = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
+const LAUNCH_FEE_SOL = 0.1;
 
-async function sendLaunchFee() {
-  const provider = (window as any).solana;
-
-  if (!provider || !provider.isPhantom) {
-    alert("Phantom wallet not found");
-    return false;
-  }
-await provider.connect();
-  const connection = new (window as any).solanaWeb3.Connection(ALCHEMY_RPC, "confirmed");
-
-  const fromPubkey = provider.publicKey;
-
-  const toPubkey = new (window as any).solanaWeb3.PublicKey(
-    "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
-  );
-
-  // 🔥 FRESH BLOCKHASH FIX
-  const { blockhash, lastValidBlockHeight } =
-    await connection.getLatestBlockhash();
-
-  const transaction = new (window as any).solanaWeb3.Transaction({
-    recentBlockhash: blockhash,
-    feePayer: fromPubkey,
-  }).add(
-    (window as any).solanaWeb3.SystemProgram.transfer({
-      fromPubkey,
-      toPubkey,
-      lamports: 0.1 * (window as any).solanaWeb3.LAMPORTS_PER_SOL,
-    })
-  );
-
-  const signed = await provider.signTransaction(transaction);
-
-  const signature = await connection.sendRawTransaction(
-    signed.serialize()
-  );
-
-  await connection.confirmTransaction({
-    signature,
-    blockhash,
-    lastValidBlockHeight,
-  });
-
-  return signature;
-}
 document.body.innerHTML = `
   <h1>TSRS Coin Forge 🚀</h1>
   <p>Frontend is LIVE</p>
@@ -82,6 +39,7 @@ document.body.innerHTML = `
     <p id="resultSupply"></p>
     <p id="resultDescription"></p>
     <p id="resultCA"></p>
+    <p id="resultFeeTx"></p>
     <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
   </div>
 `;
@@ -97,6 +55,7 @@ const resultSymbol = document.getElementById("resultSymbol") as HTMLParagraphEle
 const resultSupply = document.getElementById("resultSupply") as HTMLParagraphElement;
 const resultDescription = document.getElementById("resultDescription") as HTMLParagraphElement;
 const resultCA = document.getElementById("resultCA") as HTMLParagraphElement;
+const resultFeeTx = document.getElementById("resultFeeTx") as HTMLParagraphElement;
 const resultImage = document.getElementById("resultImage") as HTMLImageElement;
 
 function getErrorMessage(err: unknown): string {
@@ -115,32 +74,69 @@ function fakeCA(): string {
   return out;
 }
 
+async function ensurePhantom() {
+  const provider = (window as any).solana;
+
+  if (!provider || !provider.isPhantom) {
+    throw new Error("Phantom wallet not found.");
+  }
+
+  if (!provider.publicKey) {
+    await provider.connect();
+  }
+
+  return provider;
+}
+
+async function sendLaunchFee(): Promise<string> {
+  const provider = await ensurePhantom();
+  const solanaWeb3 = (window as any).solanaWeb3;
+
+  if (!solanaWeb3) {
+    throw new Error("solanaWeb3 not loaded.");
+  }
+
+  const connection = new solanaWeb3.Connection(ALCHEMY_RPC_URL, "confirmed");
+  const latestBlockhash = await connection.getLatestBlockhash("confirmed");
+
+  const transaction = new solanaWeb3.Transaction({
+    feePayer: provider.publicKey,
+    recentBlockhash: latestBlockhash.blockhash,
+  }).add(
+    solanaWeb3.SystemProgram.transfer({
+      fromPubkey: provider.publicKey,
+      toPubkey: new solanaWeb3.PublicKey(FEE_WALLET),
+      lamports: Math.round(LAUNCH_FEE_SOL * solanaWeb3.LAMPORTS_PER_SOL),
+    })
+  );
+
+  const signedTransaction = await provider.signTransaction(transaction);
+  const signature = await connection.sendRawTransaction(
+    signedTransaction.serialize(),
+    {
+      skipPreflight: false,
+      preflightCommitment: "confirmed",
+      maxRetries: 5,
+    }
+  );
+
+  return signature;
+}
+
 connectBtn.onclick = async () => {
   try {
-    const provider = (window as any).solana;
-
-    if (!provider || !provider.isPhantom) {
-      walletAddress.innerText = "Phantom wallet not found.";
-      return;
-    }
-
-    const resp = await provider.connect();
-    walletAddress.innerText = "Connected: " + resp.publicKey.toString();
+    const provider = await ensurePhantom();
+    walletAddress.innerText = "Connected: " + provider.publicKey.toString();
   } catch (err) {
     walletAddress.innerText = "Wallet connection failed: " + getErrorMessage(err);
   }
 };
 
 createBtn.onclick = async () => {
-  try {   
-    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+  try {
+    const provider = await ensurePhantom();
+    walletAddress.innerText = "Connected: " + provider.publicKey.toString();
 
-const fee = await sendLaunchFee();
-
-if (!fee) {
-  createStatus.innerText = "Payment failed.";
-  return;
-}
     const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim();
     const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim().toUpperCase();
     const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim();
@@ -160,13 +156,18 @@ if (!fee) {
       return;
     }
 
-    createStatus.innerText = "Frontend create flow working. Backend mint not connected yet.";
+    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+
+    const feeSignature = await sendLaunchFee();
+
+    createStatus.innerText = "Fee submitted. Backend mint not connected yet.";
 
     resultName.innerText = "Name: " + tokenName;
     resultSymbol.innerText = "Symbol: " + tokenSymbol;
     resultSupply.innerText = "Supply: " + tokenSupply;
     resultDescription.innerText = "Description: " + tokenDescription;
     resultCA.innerText = "CA / Mint Address: " + fakeCA();
+    resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
 
     const imageUrl = URL.createObjectURL(imageFile);
     resultImage.src = imageUrl;
