@@ -77,6 +77,38 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   return null;
 }
 
+function isRetriableError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("block height exceeded") ||
+    lower.includes("signature has expired") ||
+    lower.includes("blockhash not found") ||
+    lower.includes("transaction expired")
+  );
+}
+
+async function retry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 1500): Promise<T> {
+  let lastErr: unknown;
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+
+      if (!isRetriableError(err) || i === attempts - 1) {
+        throw err;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw lastErr;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return json(res, 405, { error: "Method not allowed" });
@@ -115,30 +147,36 @@ export default async function handler(req: any, res: any) {
       return json(res, 400, { error: "Required 0.1 SOL fee was not found in transaction" });
     }
 
-    const mint = await createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      DECIMALS
+    const mint = await retry(() =>
+      createMint(
+        connection,
+        payer,
+        payer.publicKey,
+        payer.publicKey,
+        DECIMALS
+      )
     );
 
-    const creatorAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      mint,
-      creator
+    const creatorAta = await retry(() =>
+      getOrCreateAssociatedTokenAccount(
+        connection,
+        payer,
+        mint,
+        creator
+      )
     );
 
     const amount = parseSupply(String(tokenSupply));
 
-    const mintSignature = await mintTo(
-      connection,
-      payer,
-      mint,
-      creatorAta.address,
-      payer,
-      amount
+    const mintSignature = await retry(() =>
+      mintTo(
+        connection,
+        payer,
+        mint,
+        creatorAta.address,
+        payer,
+        amount
+      )
     );
 
     return json(res, 200, {
