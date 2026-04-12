@@ -92,9 +92,9 @@ document.getElementById("connectWallet")?.addEventListener("click", async () => 
 })
 
 document.getElementById("createCoin")?.addEventListener("click", async () => {
- alert("CLICK WORKED") 
-   const paid = await sendLaunchFee()
-  if (!paid) return
+  alert("CLICK WORKED")
+  alert("solanaWeb3 type: " + typeof (window as any).solanaWeb3)
+  const paid = await sendLaunchFee()
 
   const name = (document.getElementById("tokenName") as HTMLInputElement).value
   const symbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value
