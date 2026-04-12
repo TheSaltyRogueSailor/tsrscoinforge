@@ -1,3 +1,7 @@
+const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
+const LAUNCH_FEE_SOL = 0.1;
+
 document.body.innerHTML = `
   <h1>TSRS Coin Forge 🚀</h1>
   <p>Frontend is LIVE</p>
@@ -39,12 +43,6 @@ document.body.innerHTML = `
     <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
   </div>
 `;
-
-const ALCHEMY_RPC_URL =
-  "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
-
-const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
-const LAUNCH_FEE_SOL = 0.1;
 
 const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement;
 const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement;
@@ -100,12 +98,7 @@ async function sendLaunchFee(): Promise<string> {
 
   const connection = new solanaWeb3.Connection(ALCHEMY_RPC_URL, "confirmed");
 
-  const latestBlockhash = await connection.getLatestBlockhash();
-
-  const transaction = new solanaWeb3.Transaction({
-    feePayer: provider.publicKey,
-    recentBlockhash: latestBlockhash.blockhash,
-  }).add(
+  const transaction = new solanaWeb3.Transaction().add(
     solanaWeb3.SystemProgram.transfer({
       fromPubkey: provider.publicKey,
       toPubkey: new solanaWeb3.PublicKey(FEE_WALLET),
@@ -113,18 +106,11 @@ async function sendLaunchFee(): Promise<string> {
     })
   );
 
-  const result = await provider.signAndSendTransaction(transaction);
+  const { signature } = await provider.signAndSendTransaction(transaction);
 
-  await connection.confirmTransaction(
-    {
-      signature: result.signature,
-      blockhash: latestBlockhash.blockhash,
-      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-    },
-    "confirmed"
-  );
+  await connection.confirmTransaction(signature, "confirmed");
 
-  return result.signature as string;
+  return signature;
 }
 
 connectBtn.onclick = async () => {
