@@ -94,7 +94,7 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   return null;
 }
 
-function isExpiredError(err: unknown): boolean {
+function isRetriableError(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err);
   const lower = message.toLowerCase();
 
@@ -106,59 +106,186 @@ function isExpiredError(err: unknown): boolean {
   );
 }
 
-async function sendTxWithRetry(
+async function sendTx(
   connection: Connection,
   payer: Keypair,
   instructions: any[],
-  extraSigners: Keypair[] = [],
-  attempts = 5
-): Promise<string> {
-  let lastErr: unknown;
+  extraSigners: Keypair[] = []
+): Promise<{ signature: string; blockhash: string; lastValidBlockHeight: number }> {
+  const { blockhash, lastValidBlockHeight } =
+    await connection.getLatestBlockhash("confirmed");
 
-  for (let i = 0; i < attempts; i++) {
+  const tx = new Transaction({
+    feePayer: payer.publicKey,
+    recentBlockhash: blockhash,
+  });
+
+  for (const ix of instructions) {
+    tx.add(ix);
+  }
+
+  tx.sign(payer, ...extraSigners);
+
+  const signature = await connection.sendRawTransaction(tx.serialize(), {
+    skipPreflight: false,
+    preflightCommitment: "confirmed",
+    maxRetries: 5,
+  });
+
+  return { signature, blockhash, lastValidBlockHeight };
+}
+
+async function confirmTx(
+  connection: Connection,
+  signature: string,
+  blockhash: string,
+  lastValidBlockHeight: number
+) {
+  await connection.confirmTransaction(
+    {
+      signature,
+      blockhash,
+      lastValidBlockHeight,
+    },
+    "confirmed"
+  );
+}
+
+async function createMintWithFreshKeypair(
+  connection: Connection,
+  payer: Keypair
+): Promise<{ mintKeypair: Keypair; createMintSignature: string }> {
+  const mintRent = await getMinimumBalanceForRentExemptMint(connection);
+
+  for (let i = 0; i < 5; i++) {
+    const mintKeypair = Keypair.generate();
+
     try {
-      const { blockhash, lastValidBlockHeight } =
-        await connection.getLatestBlockhash("confirmed");
-
-      const tx = new Transaction({
-        feePayer: payer.publicKey,
-        recentBlockhash: blockhash,
-      });
-
-      for (const ix of instructions) {
-        tx.add(ix);
-      }
-
-      tx.sign(payer, ...extraSigners);
-
-      const signature = await connection.sendRawTransaction(tx.serialize(), {
-        skipPreflight: false,
-        preflightCommitment: "confirmed",
-        maxRetries: 5,
-      });
-
-      await connection.confirmTransaction(
-        {
-          signature,
-          blockhash,
-          lastValidBlockHeight,
-        },
-        "confirmed"
+      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
+        connection,
+        payer,
+        [
+          SystemProgram.createAccount({
+            fromPubkey: payer.publicKey,
+            newAccountPubkey: mintKeypair.publicKey,
+            space: MINT_SIZE,
+            lamports: mintRent,
+            programId: TOKEN_PROGRAM_ID,
+          }),
+          createInitializeMintInstruction(
+            mintKeypair.publicKey,
+            DECIMALS,
+            payer.publicKey,
+            payer.publicKey
+          ),
+        ],
+        [mintKeypair]
       );
 
-      return signature;
-    } catch (err) {
-      lastErr = err;
+      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
 
-      if (!isExpiredError(err) || i === attempts - 1) {
+      return { mintKeypair, createMintSignature: signature };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+
+      if (!isRetriableError(err) && !message.toLowerCase().includes("already in use")) {
         throw err;
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
   }
 
-  throw lastErr;
+  throw new Error("Failed to create mint after retries");
+}
+
+async function ensureAta(
+  connection: Connection,
+  payer: Keypair,
+  mint: PublicKey,
+  owner: PublicKey
+): Promise<{ ata: PublicKey; createAtaSignature: string | null }> {
+  const ata = await getAssociatedTokenAddress(
+    mint,
+    owner,
+    false,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const existing = await connection.getAccountInfo(ata, "confirmed");
+  if (existing) {
+    return { ata, createAtaSignature: null };
+  }
+
+  for (let i = 0; i < 5; i++) {
+    try {
+      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
+        connection,
+        payer,
+        [
+          createAssociatedTokenAccountInstruction(
+            payer.publicKey,
+            ata,
+            owner,
+            mint,
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID
+          ),
+        ]
+      );
+
+      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
+
+      return { ata, createAtaSignature: signature };
+    } catch (err) {
+      const existingAfter = await connection.getAccountInfo(ata, "confirmed");
+      if (existingAfter) {
+        return { ata, createAtaSignature: null };
+      }
+
+      if (!isRetriableError(err)) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error("Failed to create associated token account after retries");
+}
+
+async function mintToWithRetry(
+  connection: Connection,
+  payer: Keypair,
+  mint: PublicKey,
+  destinationAta: PublicKey,
+  amount: bigint
+): Promise<string> {
+  for (let i = 0; i < 5; i++) {
+    try {
+      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
+        connection,
+        payer,
+        [
+          createMintToInstruction(
+            mint,
+            destinationAta,
+            payer.publicKey,
+            amount,
+            [],
+            TOKEN_PROGRAM_ID
+          ),
+        ]
+      );
+
+      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
+
+      return signature;
+    } catch (err) {
+      if (!isRetriableError(err)) {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error("Failed to mint tokens after retries");
 }
 
 export default async function handler(req: any, res: any) {
@@ -199,77 +326,35 @@ export default async function handler(req: any, res: any) {
       return json(res, 400, { error: "Required 0.1 SOL fee was not found in transaction" });
     }
 
-    const mintKeypair = Keypair.generate();
-    const mintRent = await getMinimumBalanceForRentExemptMint(connection);
-
-    const createMintSignature = await sendTxWithRetry(
+    const { mintKeypair, createMintSignature } = await createMintWithFreshKeypair(
       connection,
-      payer,
-      [
-        SystemProgram.createAccount({
-          fromPubkey: payer.publicKey,
-          newAccountPubkey: mintKeypair.publicKey,
-          space: MINT_SIZE,
-          lamports: mintRent,
-          programId: TOKEN_PROGRAM_ID,
-        }),
-        createInitializeMintInstruction(
-          mintKeypair.publicKey,
-          DECIMALS,
-          payer.publicKey,
-          payer.publicKey
-        ),
-      ],
-      [mintKeypair]
+      payer
     );
 
-    const creatorAta = await getAssociatedTokenAddress(
+    const { ata, createAtaSignature } = await ensureAta(
+      connection,
+      payer,
       mintKeypair.publicKey,
-      creator,
-      false,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    );
-
-    const createAtaSignature = await sendTxWithRetry(
-      connection,
-      payer,
-      [
-        createAssociatedTokenAccountInstruction(
-          payer.publicKey,
-          creatorAta,
-          creator,
-          mintKeypair.publicKey,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        ),
-      ]
+      creator
     );
 
     const amount = parseSupply(String(tokenSupply));
 
-    const mintToSignature = await sendTxWithRetry(
+    const mintSignature = await mintToWithRetry(
       connection,
       payer,
-      [
-        createMintToInstruction(
-          mintKeypair.publicKey,
-          creatorAta,
-          payer.publicKey,
-          amount,
-          [],
-          TOKEN_PROGRAM_ID
-        ),
-      ]
+      mintKeypair.publicKey,
+      ata,
+      amount
     );
 
     return json(res, 200, {
       ok: true,
       mintAddress: mintKeypair.publicKey.toBase58(),
-      mintSignature: mintToSignature,
+      mintSignature,
       createMintSignature,
       createAtaSignature,
-      creatorTokenAccount: creatorAta.toBase58(),
+      creatorTokenAccount: ata.toBase58(),
       tokenName: String(tokenName),
       tokenSymbol: String(tokenSymbol),
       tokenDescription: String(tokenDescription || ""),
