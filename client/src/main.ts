@@ -132,7 +132,15 @@ connectBtn.onclick = async () => {
 };
 
 createBtn.onclick = async () => {
-  try {
+  try {   
+    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+
+const fee = await sendLaunchFee();
+
+if (!fee) {
+  createStatus.innerText = "Payment failed.";
+  return;
+}
     const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim();
     const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim().toUpperCase();
     const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim();
