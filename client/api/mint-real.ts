@@ -1,11 +1,28 @@
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
+import {
+  MINT_SIZE,
+  TOKEN_PROGRAM_ID,
+  createInitializeMintInstruction,
+  getMinimumBalanceForRentExemptMint,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
+  createMintToInstruction,
+} from "@solana/spl-token";
 import bs58 from "bs58";
 
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
 const REQUIRED_FEE_LAMPORTS = 100_000_000; // 0.1 SOL
 const DECIMALS = 9;
 const MULTIPLIER = 1_000_000_000n;
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+);
 
 function json(res: any, status: number, body: unknown) {
   res.status(status).setHeader("Content-Type", "application/json");
@@ -64,7 +81,7 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   for (let i = 0; i < 15; i++) {
     const parsedTx = await connection.getParsedTransaction(signature, {
       maxSupportedTransactionVersion: 0,
-      commitment: "confirmed"
+      commitment: "confirmed",
     });
 
     if (parsedTx) {
@@ -77,7 +94,7 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   return null;
 }
 
-function isRetriableError(err: unknown): boolean {
+function isExpiredError(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err);
   const lower = message.toLowerCase();
 
@@ -89,20 +106,55 @@ function isRetriableError(err: unknown): boolean {
   );
 }
 
-async function retry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 1500): Promise<T> {
+async function sendTxWithRetry(
+  connection: Connection,
+  payer: Keypair,
+  instructions: any[],
+  extraSigners: Keypair[] = [],
+  attempts = 5
+): Promise<string> {
   let lastErr: unknown;
 
   for (let i = 0; i < attempts; i++) {
     try {
-      return await fn();
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash("confirmed");
+
+      const tx = new Transaction({
+        feePayer: payer.publicKey,
+        recentBlockhash: blockhash,
+      });
+
+      for (const ix of instructions) {
+        tx.add(ix);
+      }
+
+      tx.sign(payer, ...extraSigners);
+
+      const signature = await connection.sendRawTransaction(tx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+        maxRetries: 5,
+      });
+
+      await connection.confirmTransaction(
+        {
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        },
+        "confirmed"
+      );
+
+      return signature;
     } catch (err) {
       lastErr = err;
 
-      if (!isRetriableError(err) || i === attempts - 1) {
+      if (!isExpiredError(err) || i === attempts - 1) {
         throw err;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
     }
   }
 
@@ -124,7 +176,7 @@ export default async function handler(req: any, res: any) {
       tokenName,
       tokenSymbol,
       tokenSupply,
-      tokenDescription
+      tokenDescription,
     } = req.body ?? {};
 
     if (!creatorWallet || !feeSignature || !tokenName || !tokenSymbol || !tokenSupply) {
@@ -147,46 +199,80 @@ export default async function handler(req: any, res: any) {
       return json(res, 400, { error: "Required 0.1 SOL fee was not found in transaction" });
     }
 
-    const mint = await retry(() =>
-      createMint(
-        connection,
-        payer,
-        payer.publicKey,
-        payer.publicKey,
-        DECIMALS
-      )
+    const mintKeypair = Keypair.generate();
+    const mintRent = await getMinimumBalanceForRentExemptMint(connection);
+
+    const createMintSignature = await sendTxWithRetry(
+      connection,
+      payer,
+      [
+        SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: mintKeypair.publicKey,
+          space: MINT_SIZE,
+          lamports: mintRent,
+          programId: TOKEN_PROGRAM_ID,
+        }),
+        createInitializeMintInstruction(
+          mintKeypair.publicKey,
+          DECIMALS,
+          payer.publicKey,
+          payer.publicKey
+        ),
+      ],
+      [mintKeypair]
     );
 
-    const creatorAta = await retry(() =>
-      getOrCreateAssociatedTokenAccount(
-        connection,
-        payer,
-        mint,
-        creator
-      )
+    const creatorAta = await getAssociatedTokenAddress(
+      mintKeypair.publicKey,
+      creator,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+
+    const createAtaSignature = await sendTxWithRetry(
+      connection,
+      payer,
+      [
+        createAssociatedTokenAccountInstruction(
+          payer.publicKey,
+          creatorAta,
+          creator,
+          mintKeypair.publicKey,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        ),
+      ]
     );
 
     const amount = parseSupply(String(tokenSupply));
 
-    const mintSignature = await retry(() =>
-      mintTo(
-        connection,
-        payer,
-        mint,
-        creatorAta.address,
-        payer,
-        amount
-      )
+    const mintToSignature = await sendTxWithRetry(
+      connection,
+      payer,
+      [
+        createMintToInstruction(
+          mintKeypair.publicKey,
+          creatorAta,
+          payer.publicKey,
+          amount,
+          [],
+          TOKEN_PROGRAM_ID
+        ),
+      ]
     );
 
     return json(res, 200, {
       ok: true,
-      mintAddress: mint.toBase58(),
-      mintSignature,
-      creatorTokenAccount: creatorAta.address.toBase58(),
+      mintAddress: mintKeypair.publicKey.toBase58(),
+      mintSignature: mintToSignature,
+      createMintSignature,
+      createAtaSignature,
+      creatorTokenAccount: creatorAta.toBase58(),
       tokenName: String(tokenName),
       tokenSymbol: String(tokenSymbol),
-      tokenDescription: String(tokenDescription || "")
+      tokenDescription: String(tokenDescription || ""),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
