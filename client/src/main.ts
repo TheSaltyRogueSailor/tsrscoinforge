@@ -1,4 +1,12 @@
-const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+  LAMPORTS_PER_SOL
+} from "@solana/web3.js";
+
+const ALCHEMY_RPC_URL = "VpKm0MUizuIShAsvvW2rJ";
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
 const LAUNCH_FEE_SOL = 0.1;
 
@@ -40,6 +48,7 @@ document.body.innerHTML = `
     <p id="resultDescription"></p>
     <p id="resultCA"></p>
     <p id="resultFeeTx"></p>
+    <p id="resultMintTx"></p>
     <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
   </div>
 `;
@@ -56,6 +65,7 @@ const resultSupply = document.getElementById("resultSupply") as HTMLParagraphEle
 const resultDescription = document.getElementById("resultDescription") as HTMLParagraphElement;
 const resultCA = document.getElementById("resultCA") as HTMLParagraphElement;
 const resultFeeTx = document.getElementById("resultFeeTx") as HTMLParagraphElement;
+const resultMintTx = document.getElementById("resultMintTx") as HTMLParagraphElement;
 const resultImage = document.getElementById("resultImage") as HTMLImageElement;
 
 function getErrorMessage(err: unknown): string {
@@ -63,15 +73,6 @@ function getErrorMessage(err: unknown): string {
   if (typeof err === "string") return err;
   if (err instanceof Error) return err.message;
   return String(err);
-}
-
-function fakeCA(): string {
-  const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  let out = "";
-  for (let i = 0; i < 44; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return out;
 }
 
 async function ensurePhantom() {
@@ -90,33 +91,29 @@ async function ensurePhantom() {
 
 async function sendLaunchFee(): Promise<string> {
   const provider = await ensurePhantom();
-  const solanaWeb3 = (window as any).solanaWeb3;
 
-  if (!solanaWeb3) {
-    throw new Error("solanaWeb3 not loaded.");
-  }
-
-  const connection = new solanaWeb3.Connection(ALCHEMY_RPC_URL, "confirmed");
+  const connection = new Connection(ALCHEMY_RPC_URL, "confirmed");
   const latestBlockhash = await connection.getLatestBlockhash("confirmed");
 
-  const transaction = new solanaWeb3.Transaction({
+  const transaction = new Transaction({
     feePayer: provider.publicKey,
-    recentBlockhash: latestBlockhash.blockhash,
+    recentBlockhash: latestBlockhash.blockhash
   }).add(
-    solanaWeb3.SystemProgram.transfer({
+    SystemProgram.transfer({
       fromPubkey: provider.publicKey,
-      toPubkey: new solanaWeb3.PublicKey(FEE_WALLET),
-      lamports: Math.round(LAUNCH_FEE_SOL * solanaWeb3.LAMPORTS_PER_SOL),
+      toPubkey: new PublicKey(FEE_WALLET),
+      lamports: Math.round(LAUNCH_FEE_SOL * LAMPORTS_PER_SOL)
     })
   );
 
   const signedTransaction = await provider.signTransaction(transaction);
+
   const signature = await connection.sendRawTransaction(
     signedTransaction.serialize(),
     {
       skipPreflight: false,
       preflightCommitment: "confirmed",
-      maxRetries: 5,
+      maxRetries: 5
     }
   );
 
@@ -160,14 +157,38 @@ createBtn.onclick = async () => {
 
     const feeSignature = await sendLaunchFee();
 
-    createStatus.innerText = "Fee submitted. Backend mint not connected yet.";
+    createStatus.innerText = "Fee submitted. Minting real token...";
+
+    const mintRes = await fetch("/api/mint-real", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        creatorWallet: provider.publicKey.toString(),
+        feeSignature,
+        tokenName,
+        tokenSymbol,
+        tokenSupply,
+        tokenDescription
+      })
+    });
+
+    const mintData = await mintRes.json();
+
+    if (!mintRes.ok) {
+      throw new Error(mintData?.error || "Mint failed");
+    }
+
+    createStatus.innerText = "Real token minted successfully.";
 
     resultName.innerText = "Name: " + tokenName;
     resultSymbol.innerText = "Symbol: " + tokenSymbol;
     resultSupply.innerText = "Supply: " + tokenSupply;
     resultDescription.innerText = "Description: " + tokenDescription;
-    resultCA.innerText = "CA / Mint Address: " + fakeCA();
+    resultCA.innerText = "CA / Mint Address: " + mintData.mintAddress;
     resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
+    resultMintTx.innerText = "Mint Tx: " + mintData.mintSignature;
 
     const imageUrl = URL.createObjectURL(imageFile);
     resultImage.src = imageUrl;
