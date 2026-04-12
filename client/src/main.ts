@@ -40,6 +40,12 @@ document.body.innerHTML = `
   </div>
 `;
 
+const ALCHEMY_RPC_URL =
+  "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
+
+const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
+const LAUNCH_FEE_SOL = 0.1;
+
 const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement;
 const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement;
 const createBtn = document.getElementById("createCoin") as HTMLButtonElement;
@@ -64,7 +70,9 @@ function getErrorMessage(err: unknown): string {
 function fakeCA(): string {
   const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
   let out = "";
-  for (let i = 0; i < 44; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 44; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
   return out;
 }
 
@@ -90,10 +98,7 @@ async function sendLaunchFee(): Promise<string> {
     throw new Error("solanaWeb3 not loaded.");
   }
 
-  const connection = new solanaWeb3.Connection(
-    "https://api.mainnet-beta.solana.com",
-    "confirmed"
-  );
+  const connection = new solanaWeb3.Connection(ALCHEMY_RPC_URL, "confirmed");
 
   const latestBlockhash = await connection.getLatestBlockhash();
 
@@ -103,20 +108,21 @@ async function sendLaunchFee(): Promise<string> {
   }).add(
     solanaWeb3.SystemProgram.transfer({
       fromPubkey: provider.publicKey,
-      toPubkey: new solanaWeb3.PublicKey(
-        "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
-      ),
-      lamports: Math.round(0.1 * solanaWeb3.LAMPORTS_PER_SOL),
+      toPubkey: new solanaWeb3.PublicKey(FEE_WALLET),
+      lamports: Math.round(LAUNCH_FEE_SOL * solanaWeb3.LAMPORTS_PER_SOL),
     })
   );
 
   const result = await provider.signAndSendTransaction(transaction);
 
-  await connection.confirmTransaction({
-    signature: result.signature,
-    blockhash: latestBlockhash.blockhash,
-    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-  });
+  await connection.confirmTransaction(
+    {
+      signature: result.signature,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    },
+    "confirmed"
+  );
 
   return result.signature as string;
 }
