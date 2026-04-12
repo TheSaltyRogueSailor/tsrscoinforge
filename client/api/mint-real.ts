@@ -310,7 +310,10 @@ export default async function handler(req: any, res: any) {
       return json(res, 400, { error: "Missing required fields" });
     }
 
-    const connection = new Connection(rpcUrl, "confirmed");
+   const connection = new Connection(process.env.ALCHEMY_RPC_URL!, {
+  commitment: "confirmed",
+  confirmTransactionInitialTimeout: 60000
+});
     const payer = Keypair.fromSecretKey(bs58.decode(mintSecretKeyBase58));
     const creator = new PublicKey(String(creatorWallet).trim());
 
