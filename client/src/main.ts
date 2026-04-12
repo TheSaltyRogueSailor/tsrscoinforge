@@ -7,7 +7,7 @@ async function sendLaunchFee() {
     alert("Phantom wallet not found");
     return false;
   }
-
+await provider.connect();
   const connection = new (window as any).solanaWeb3.Connection(ALCHEMY_RPC, "confirmed");
 
   const fromPubkey = provider.publicKey;
