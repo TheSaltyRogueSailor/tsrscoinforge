@@ -174,7 +174,18 @@ createBtn.onclick = async () => {
       })
     });
 
-    const mintData = await mintRes.json();
+  const mintText = await mintRes.text();
+
+let mintData: any;
+try {
+  mintData = JSON.parse(mintText);
+} catch {
+  throw new Error("Backend error: " + mintText);
+}
+
+if (!mintRes.ok) {
+  throw new Error(mintData?.error || "Mint failed");
+}
 
     if (!mintRes.ok) {
       throw new Error(mintData?.error || "Mint failed");
