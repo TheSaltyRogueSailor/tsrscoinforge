@@ -97,6 +97,7 @@ async function sendLaunchFee(): Promise<string> {
   }
 
   const connection = new solanaWeb3.Connection(ALCHEMY_RPC_URL, "confirmed");
+  const latestBlockhash = await connection.getLatestBlockhash("confirmed");
 
   const transaction = new solanaWeb3.Transaction().add(
     solanaWeb3.SystemProgram.transfer({
@@ -106,9 +107,20 @@ async function sendLaunchFee(): Promise<string> {
     })
   );
 
-  const { signature } = await provider.signAndSendTransaction(transaction);
+  transaction.feePayer = provider.publicKey;
+  transaction.recentBlockhash = latestBlockhash.blockhash;
 
-  await connection.confirmTransaction(signature, "confirmed");
+  const signedTransaction = await provider.signTransaction(transaction);
+  const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+
+  await connection.confirmTransaction(
+    {
+      signature,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    },
+    "confirmed"
+  );
 
   return signature;
 }
