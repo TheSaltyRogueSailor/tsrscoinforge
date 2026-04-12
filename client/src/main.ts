@@ -35,6 +35,7 @@ document.body.innerHTML = `
     <p id="resultSupply"></p>
     <p id="resultDescription"></p>
     <p id="resultCA"></p>
+    <p id="resultFeeTx"></p>
     <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
   </div>
 `;
@@ -50,6 +51,7 @@ const resultSymbol = document.getElementById("resultSymbol") as HTMLParagraphEle
 const resultSupply = document.getElementById("resultSupply") as HTMLParagraphElement;
 const resultDescription = document.getElementById("resultDescription") as HTMLParagraphElement;
 const resultCA = document.getElementById("resultCA") as HTMLParagraphElement;
+const resultFeeTx = document.getElementById("resultFeeTx") as HTMLParagraphElement;
 const resultImage = document.getElementById("resultImage") as HTMLImageElement;
 
 function getErrorMessage(err: unknown): string {
@@ -62,23 +64,67 @@ function getErrorMessage(err: unknown): string {
 function fakeCA(): string {
   const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
   let out = "";
-  for (let i = 0; i < 44; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < 44; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
+}
+
+async function ensurePhantom() {
+  const provider = (window as any).solana;
+
+  if (!provider || !provider.isPhantom) {
+    throw new Error("Phantom wallet not found.");
+  }
+
+  if (!provider.publicKey) {
+    await provider.connect();
+  }
+
+  return provider;
+}
+
+async function sendLaunchFee(): Promise<string> {
+  const provider = await ensurePhantom();
+  const solanaWeb3 = (window as any).solanaWeb3;
+
+  if (!solanaWeb3) {
+    throw new Error("solanaWeb3 not loaded.");
+  }
+
+  const connection = new solanaWeb3.Connection(
+    "https://api.mainnet-beta.solana.com",
+    "confirmed"
+  );
+
+  const latestBlockhash = await connection.getLatestBlockhash();
+
+  const transaction = new solanaWeb3.Transaction({
+    feePayer: provider.publicKey,
+    recentBlockhash: latestBlockhash.blockhash,
+  }).add(
+    solanaWeb3.SystemProgram.transfer({
+      fromPubkey: provider.publicKey,
+      toPubkey: new solanaWeb3.PublicKey(
+        "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
+      ),
+      lamports: Math.round(0.1 * solanaWeb3.LAMPORTS_PER_SOL),
+    })
+  );
+
+  const result = await provider.signAndSendTransaction(transaction);
+
+  await connection.confirmTransaction({
+    signature: result.signature,
+    blockhash: latestBlockhash.blockhash,
+    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  });
+
+  return result.signature as string;
 }
 
 connectBtn.onclick = async () => {
   try {
-    const provider = (window as any).solana;
-
-    if (!provider || !provider.isPhantom) {
-      walletAddress.innerText = "Phantom wallet not found.";
-      return;
-    }
-
-    const resp = await provider.connect();
-    walletAddress.innerText = "Connected: " + resp.publicKey.toString();
+    const provider = await ensurePhantom();
+    walletAddress.innerText = "Connected: " + provider.publicKey.toString();
   } catch (err) {
     walletAddress.innerText = "Wallet connection failed: " + getErrorMessage(err);
   }
@@ -86,6 +132,9 @@ connectBtn.onclick = async () => {
 
 createBtn.onclick = async () => {
   try {
+    const provider = await ensurePhantom();
+    walletAddress.innerText = "Connected: " + provider.publicKey.toString();
+
     const tokenName = (document.getElementById("tokenName") as HTMLInputElement).value.trim();
     const tokenSymbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value.trim().toUpperCase();
     const tokenSupply = (document.getElementById("tokenSupply") as HTMLInputElement).value.trim();
@@ -105,13 +154,18 @@ createBtn.onclick = async () => {
       return;
     }
 
-    createStatus.innerText = "Frontend create flow working. Backend mint not connected yet.";
+    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+
+    const feeSignature = await sendLaunchFee();
+
+    createStatus.innerText = "Fee paid. Backend mint not connected yet.";
 
     resultName.innerText = "Name: " + tokenName;
     resultSymbol.innerText = "Symbol: " + tokenSymbol;
     resultSupply.innerText = "Supply: " + tokenSupply;
     resultDescription.innerText = "Description: " + tokenDescription;
     resultCA.innerText = "CA / Mint Address: " + fakeCA();
+    resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
 
     const imageUrl = URL.createObjectURL(imageFile);
     resultImage.src = imageUrl;
