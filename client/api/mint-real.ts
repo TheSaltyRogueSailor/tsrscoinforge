@@ -60,6 +60,23 @@ function feeWasPaid(parsedTx: any, creatorWallet: string): boolean {
   return false;
 }
 
+async function waitForParsedTransaction(connection: Connection, signature: string) {
+  for (let i = 0; i < 15; i++) {
+    const parsedTx = await connection.getParsedTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+      commitment: "confirmed"
+    });
+
+    if (parsedTx) {
+      return parsedTx;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return null;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return json(res, 405, { error: "Method not allowed" });
@@ -86,13 +103,10 @@ export default async function handler(req: any, res: any) {
     const payer = Keypair.fromSecretKey(bs58.decode(mintSecretKeyBase58));
     const creator = new PublicKey(String(creatorWallet).trim());
 
-    const parsedTx = await connection.getParsedTransaction(String(feeSignature), {
-      maxSupportedTransactionVersion: 0,
-      commitment: "confirmed"
-    });
+    const parsedTx = await waitForParsedTransaction(connection, String(feeSignature));
 
     if (!parsedTx) {
-      return json(res, 400, { error: "Fee transaction not found" });
+      return json(res, 400, { error: "Fee transaction not found after waiting" });
     }
 
     const feeOk = feeWasPaid(parsedTx, String(creatorWallet).trim());
@@ -117,6 +131,7 @@ export default async function handler(req: any, res: any) {
     );
 
     const amount = parseSupply(String(tokenSupply));
+
     const mintSignature = await mintTo(
       connection,
       payer,
@@ -136,9 +151,7 @@ export default async function handler(req: any, res: any) {
       tokenDescription: String(tokenDescription || "")
     });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : String(err);
-
+    const message = err instanceof Error ? err.message : String(err);
     return json(res, 500, { error: message });
   }
 }
