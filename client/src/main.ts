@@ -91,10 +91,58 @@ document.getElementById("connectWallet")?.addEventListener("click", async () => 
     "Connected: " + res.publicKey.toString()
 })
 
-document.getElementById("createCoin")?.addEventListener("click", async () => {
-  alert("CLICK WORKED")
-  alert("solanaWeb3 type: " + typeof (window as any).solanaWeb3)
-  const paid = await sendLaunchFee()
+document.getElementById("createCoin")?.addEventListener("click", async function sendLaunchFee() {
+  try {
+    const provider = (window as any).solana
+    const solanaWeb3 = (window as any).solanaWeb3
+
+    if (!provider || !provider.isPhantom) {
+      alert("Phantom wallet not found")
+      return false
+    }
+
+    if (!provider.publicKey) {
+      await provider.connect()
+    }
+
+    const connection = new solanaWeb3.Connection(
+      "https://api.mainnet-beta.solana.com",
+      "confirmed"
+    )
+
+    const fromPubkey = provider.publicKey
+    const toPubkey = new solanaWeb3.PublicKey(
+      "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8"
+    )
+
+    const transaction = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({
+        fromPubkey,
+        toPubkey,
+        lamports: Math.round(0.1 * solanaWeb3.LAMPORTS_PER_SOL),
+      })
+    )
+
+    transaction.feePayer = fromPubkey
+
+    const latestBlockhash = await connection.getLatestBlockhash()
+    transaction.recentBlockhash = latestBlockhash.blockhash
+
+    const result = await provider.signAndSendTransaction(transaction)
+
+    await connection.confirmTransaction({
+      signature: result.signature,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    })
+
+    return true
+  } catch (err) {
+    console.error(err)
+    alert("Payment failed: " + (err instanceof Error ? err.message : String(err)))
+    return false
+  }
+}
 
   const name = (document.getElementById("tokenName") as HTMLInputElement).value
   const symbol = (document.getElementById("tokenSymbol") as HTMLInputElement).value
