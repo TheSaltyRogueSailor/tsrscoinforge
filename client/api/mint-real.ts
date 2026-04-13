@@ -375,13 +375,22 @@ const tx = new Transaction().add(
     TOKEN_PROGRAM_ID
   )
 );
+const latestBlockhash = await connection.getLatestBlockhash();
 
-const mintSignature = await sendAndConfirmTransaction(
-  connection,
+tx.recentBlockhash = latestBlockhash.blockhash;
+tx.feePayer = payer.publicKey;
+
+const mintSignature = await connection.sendTransaction(
   tx,
-  [payer, mintKeypair],
-  { commitment: "confirmed" }
+  [payer, mintKeypair]
 );
+
+await connection.confirmTransaction({
+  signature: mintSignature,
+  blockhash: latestBlockhash.blockhash,
+  lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+});
+
 
 const createMintSignature = mintSignature;
 const createAtaSignature = mintSignature;
