@@ -4,6 +4,7 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  sendAndConfirmTransaction
 } from "@solana/web3.js";
 import {
   MINT_SIZE,
