@@ -11,6 +11,7 @@ import {
   Transaction,
   ComputeBudgetProgram
 } from "@solana/web3.js";
+
 import {
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
@@ -20,12 +21,19 @@ import {
   createAssociatedTokenAccountInstruction,
   createMintToInstruction
 } from "@solana/spl-token";
+
+import {
+  createCreateMetadataAccountV3Instruction,
+  PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID
+} from "@metaplex-foundation/mpl-token-metadata";
+
 import bs58 from "bs58";
 
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
-const REQUIRED_FEE_LAMPORTS = 100_000_000; // 0.1 SOL
+const REQUIRED_FEE_LAMPORTS = 100_000_000;
 const DECIMALS = 9;
 const MULTIPLIER = 1_000_000_000n;
+
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
 );
@@ -37,9 +45,7 @@ function json(res: any, status: number, body: unknown) {
 
 function getEnv(name: string): string {
   const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing env var: ${name}`);
-  }
+  if (!value) throw new Error(`Missing env var: ${name}`);
   return value;
 }
 
@@ -57,6 +63,34 @@ function parseSupply(raw: string): bigint {
   }
 
   return whole * MULTIPLIER;
+}
+
+function getMetadataPDA(mint: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer()
+    ],
+    TOKEN_METADATA_PROGRAM_ID
+  )[0];
+}
+
+async function waitForParsedTransaction(connection: Connection, signature: string) {
+  for (let i = 0; i < 15; i++) {
+    const parsedTx = await connection.getParsedTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+      commitment: "confirmed"
+    });
+
+    if (parsedTx) {
+      return parsedTx;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return null;
 }
 
 function feeWasPaid(parsedTx: any, creatorWallet: string): boolean {
@@ -85,23 +119,6 @@ function feeWasPaid(parsedTx: any, creatorWallet: string): boolean {
   return false;
 }
 
-async function waitForParsedTransaction(connection: Connection, signature: string) {
-  for (let i = 0; i < 15; i++) {
-    const parsedTx = await connection.getParsedTransaction(signature, {
-      maxSupportedTransactionVersion: 0,
-      commitment: "confirmed"
-    });
-
-    if (parsedTx) {
-      return parsedTx;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-
-  return null;
-}
-
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return json(res, 405, { error: "Method not allowed" });
@@ -109,7 +126,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const rpcUrl = getEnv("ALCHEMY_RPC_URL");
-    const mintSecretKeyBase58 = getEnv("MINT_SECRET_KEY");
+    const mintSecretKey = getEnv("MINT_SECRET_KEY");
 
     const {
       creatorWallet,
@@ -125,7 +142,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const connection = new Connection(rpcUrl, "confirmed");
-    const payer = Keypair.fromSecretKey(bs58.decode(mintSecretKeyBase58));
+    const payer = Keypair.fromSecretKey(bs58.decode(mintSecretKey));
     const creator = new PublicKey(String(creatorWallet).trim());
 
     const parsedTx = await waitForParsedTransaction(connection, String(feeSignature));
@@ -151,6 +168,7 @@ export default async function handler(req: any, res: any) {
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
+    const metadataPDA = getMetadataPDA(mintKeypair.publicKey);
     const amount = parseSupply(String(tokenSupply));
     const latestBlockhash = await connection.getLatestBlockhash("processed");
 
@@ -160,15 +178,8 @@ export default async function handler(req: any, res: any) {
     });
 
     tx.add(
-      ComputeBudgetProgram.setComputeUnitLimit({
-        units: 300_000
-      })
-    );
-
-    tx.add(
-      ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 200_000
-      })
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 400000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 200000 })
     );
 
     tx.add(
@@ -212,6 +223,33 @@ export default async function handler(req: any, res: any) {
       )
     );
 
+    tx.add(
+      createCreateMetadataAccountV3Instruction(
+        {
+          metadata: metadataPDA,
+          mint: mintKeypair.publicKey,
+          mintAuthority: payer.publicKey,
+          payer: payer.publicKey,
+          updateAuthority: payer.publicKey
+        },
+        {
+          createMetadataAccountArgsV3: {
+            data: {
+              name: String(tokenName),
+              symbol: String(tokenSymbol),
+              uri: "https://arweave.net/123",
+              sellerFeeBasisPoints: 0,
+              creators: null,
+              collection: null,
+              uses: null
+            },
+            isMutable: true,
+            collectionDetails: null
+          }
+        }
+      )
+    );
+
     tx.sign(payer, mintKeypair);
 
     const mintSignature = await connection.sendRawTransaction(tx.serialize(), {
@@ -221,17 +259,11 @@ export default async function handler(req: any, res: any) {
     });
 
     return json(res, 200, {
-      ok: true,
-      submitted: true,
-      mintAddress: mintKeypair.publicKey.toBase58(),
-      mintSignature,
-      creatorTokenAccount: creatorAta.toBase58(),
-      tokenName: String(tokenName),
-      tokenSymbol: String(tokenSymbol),
-      tokenDescription: String(tokenDescription || "")
+      success: true,
+      mint: mintKeypair.publicKey.toBase58(),
+      tx: mintSignature
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return json(res, 500, { error: message });
+  } catch (err: any) {
+    return json(res, 500, { error: err.message || String(err) });
   }
 }
