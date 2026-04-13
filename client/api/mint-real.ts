@@ -1,10 +1,15 @@
+export const config = {
+  runtime: "nodejs",
+  maxDuration: 60
+};
+
 import {
   Connection,
   Keypair,
   PublicKey,
   SystemProgram,
   Transaction,
-  sendAndConfirmTransaction
+  ComputeBudgetProgram
 } from "@solana/web3.js";
 import {
   MINT_SIZE,
@@ -13,7 +18,7 @@ import {
   getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-  createMintToInstruction,
+  createMintToInstruction
 } from "@solana/spl-token";
 import bs58 from "bs58";
 
@@ -32,7 +37,9 @@ function json(res: any, status: number, body: unknown) {
 
 function getEnv(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing env var: ${name}`);
+  if (!value) {
+    throw new Error(`Missing env var: ${name}`);
+  }
   return value;
 }
 
@@ -82,7 +89,7 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   for (let i = 0; i < 15; i++) {
     const parsedTx = await connection.getParsedTransaction(signature, {
       maxSupportedTransactionVersion: 0,
-      commitment: "confirmed",
+      commitment: "confirmed"
     });
 
     if (parsedTx) {
@@ -93,200 +100,6 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
   }
 
   return null;
-}
-
-function isRetriableError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  const lower = message.toLowerCase();
-
-  return (
-    lower.includes("block height exceeded") ||
-    lower.includes("signature has expired") ||
-    lower.includes("blockhash not found") ||
-    lower.includes("transaction expired")
-  );
-}
-
-async function sendTx(
-  connection: Connection,
-  payer: Keypair,
-  instructions: any[],
-  extraSigners: Keypair[] = []
-): Promise<{ signature: string; blockhash: string; lastValidBlockHeight: number }> {
-  const { blockhash, lastValidBlockHeight } =
-    await connection.getLatestBlockhash("confirmed");
-
-  const tx = new Transaction({
-    feePayer: payer.publicKey,
-    recentBlockhash: blockhash,
-  });
-
-  for (const ix of instructions) {
-    tx.add(ix);
-  }
-
-  tx.sign(payer, ...extraSigners);
-
-  const signature = await connection.sendRawTransaction(tx.serialize(), {
-    skipPreflight: false,
-    preflightCommitment: "confirmed",
-    maxRetries: 5,
-  });
-
-  return { signature, blockhash, lastValidBlockHeight };
-}
-
-async function confirmTx(
-  connection: Connection,
-  signature: string,
-  blockhash: string,
-  lastValidBlockHeight: number
-) {
-  await connection.confirmTransaction(
-    {
-      signature,
-      blockhash,
-      lastValidBlockHeight,
-    },
-    "confirmed"
-  );
-}
-
-async function createMintWithFreshKeypair(
-  connection: Connection,
-  payer: Keypair
-): Promise<{ mintKeypair: Keypair; createMintSignature: string }> {
-  const mintRent = await getMinimumBalanceForRentExemptMint(connection);
-
-  for (let i = 0; i < 5; i++) {
-    const mintKeypair = Keypair.generate();
-
-    try {
-      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
-        connection,
-        payer,
-        [
-          SystemProgram.createAccount({
-            fromPubkey: payer.publicKey,
-            newAccountPubkey: mintKeypair.publicKey,
-            space: MINT_SIZE,
-            lamports: mintRent,
-            programId: TOKEN_PROGRAM_ID,
-          }),
-          createInitializeMintInstruction(
-            mintKeypair.publicKey,
-            DECIMALS,
-            payer.publicKey,
-            payer.publicKey
-          ),
-        ],
-        [mintKeypair]
-      );
-
-      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
-
-      return { mintKeypair, createMintSignature: signature };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-
-      if (!isRetriableError(err) && !message.toLowerCase().includes("already in use")) {
-        throw err;
-      }
-    }
-  }
-
-  throw new Error("Failed to create mint after retries");
-}
-
-async function ensureAta(
-  connection: Connection,
-  payer: Keypair,
-  mint: PublicKey,
-  owner: PublicKey
-): Promise<{ ata: PublicKey; createAtaSignature: string | null }> {
-  const ata = await getAssociatedTokenAddress(
-    mint,
-    owner,
-    false,
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  );
-
-  const existing = await connection.getAccountInfo(ata, "confirmed");
-  if (existing) {
-    return { ata, createAtaSignature: null };
-  }
-
-  for (let i = 0; i < 5; i++) {
-    try {
-      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
-        connection,
-        payer,
-        [
-          createAssociatedTokenAccountInstruction(
-            payer.publicKey,
-            ata,
-            owner,
-            mint,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          ),
-        ]
-      );
-
-      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
-
-      return { ata, createAtaSignature: signature };
-    } catch (err) {
-      const existingAfter = await connection.getAccountInfo(ata, "confirmed");
-      if (existingAfter) {
-        return { ata, createAtaSignature: null };
-      }
-
-      if (!isRetriableError(err)) {
-        throw err;
-      }
-    }
-  }
-
-  throw new Error("Failed to create associated token account after retries");
-}
-
-async function mintToWithRetry(
-  connection: Connection,
-  payer: Keypair,
-  mint: PublicKey,
-  destinationAta: PublicKey,
-  amount: bigint
-): Promise<string> {
-  for (let i = 0; i < 5; i++) {
-    try {
-      const { signature, blockhash, lastValidBlockHeight } = await sendTx(
-        connection,
-        payer,
-        [
-          createMintToInstruction(
-            mint,
-            destinationAta,
-            payer.publicKey,
-            amount,
-            [],
-            TOKEN_PROGRAM_ID
-          ),
-        ]
-      );
-
-      await confirmTx(connection, signature, blockhash, lastValidBlockHeight);
-
-      return signature;
-    } catch (err) {
-      if (!isRetriableError(err)) {
-        throw err;
-      }
-    }
-  }
-
-  throw new Error("Failed to mint tokens after retries");
 }
 
 export default async function handler(req: any, res: any) {
@@ -304,17 +117,14 @@ export default async function handler(req: any, res: any) {
       tokenName,
       tokenSymbol,
       tokenSupply,
-      tokenDescription,
+      tokenDescription
     } = req.body ?? {};
 
     if (!creatorWallet || !feeSignature || !tokenName || !tokenSymbol || !tokenSupply) {
       return json(res, 400, { error: "Missing required fields" });
     }
 
-   const connection = new Connection(process.env.ALCHEMY_RPC_URL!, {
-  commitment: "confirmed",
-  confirmTransactionInitialTimeout: 60000
-});
+    const connection = new Connection(rpcUrl, "confirmed");
     const payer = Keypair.fromSecretKey(bs58.decode(mintSecretKeyBase58));
     const creator = new PublicKey(String(creatorWallet).trim());
 
@@ -331,86 +141,94 @@ export default async function handler(req: any, res: any) {
     }
 
     const mintKeypair = Keypair.generate();
+    const mintRent = await getMinimumBalanceForRentExemptMint(connection);
 
-const mintRent = await getMinimumBalanceForRentExemptMint(connection);
-
-const creatorAta = await getAssociatedTokenAddress(
-  mintKeypair.publicKey,
-  creator,
-  false,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID
-);
-
-const amount = parseSupply(String(tokenSupply));
-
-const tx = new Transaction().add(
-  SystemProgram.createAccount({
-    fromPubkey: payer.publicKey,
-    newAccountPubkey: mintKeypair.publicKey,
-    space: MINT_SIZE,
-    lamports: mintRent,
-    programId: TOKEN_PROGRAM_ID,
-  }),
-  createInitializeMintInstruction(
-    mintKeypair.publicKey,
-    DECIMALS,
-    payer.publicKey,
-    payer.publicKey
-  ),
-  createAssociatedTokenAccountInstruction(
-    payer.publicKey,
-    creatorAta,
-    creator,
-    mintKeypair.publicKey,
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  ),
-  createMintToInstruction(
-    mintKeypair.publicKey,
-    creatorAta,
-    payer.publicKey,
-    amount,
-    [],
-    TOKEN_PROGRAM_ID
-  )
-);
-const latestBlockhash = await connection.getLatestBlockhash();
-
-tx.recentBlockhash = latestBlockhash.blockhash;
-tx.feePayer = payer.publicKey;
-
-const mintSignature = await connection.sendTransaction(
-  tx,
-  [payer, mintKeypair]
-);
-
-await connection.confirmTransaction({
-  signature: mintSignature,
-  blockhash: latestBlockhash.blockhash,
-  lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-});
-
-
-const createMintSignature = mintSignature;
-const createAtaSignature = mintSignature;
-      connection,
-      payer,
+    const creatorAta = await getAssociatedTokenAddress(
       mintKeypair.publicKey,
-      ata,
-      amount
+      creator,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
     );
+
+    const amount = parseSupply(String(tokenSupply));
+    const latestBlockhash = await connection.getLatestBlockhash("processed");
+
+    const tx = new Transaction({
+      feePayer: payer.publicKey,
+      recentBlockhash: latestBlockhash.blockhash
+    });
+
+    tx.add(
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 300_000
+      })
+    );
+
+    tx.add(
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 200_000
+      })
+    );
+
+    tx.add(
+      SystemProgram.createAccount({
+        fromPubkey: payer.publicKey,
+        newAccountPubkey: mintKeypair.publicKey,
+        space: MINT_SIZE,
+        lamports: mintRent,
+        programId: TOKEN_PROGRAM_ID
+      })
+    );
+
+    tx.add(
+      createInitializeMintInstruction(
+        mintKeypair.publicKey,
+        DECIMALS,
+        payer.publicKey,
+        payer.publicKey
+      )
+    );
+
+    tx.add(
+      createAssociatedTokenAccountInstruction(
+        payer.publicKey,
+        creatorAta,
+        creator,
+        mintKeypair.publicKey,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+
+    tx.add(
+      createMintToInstruction(
+        mintKeypair.publicKey,
+        creatorAta,
+        payer.publicKey,
+        amount,
+        [],
+        TOKEN_PROGRAM_ID
+      )
+    );
+
+    tx.sign(payer, mintKeypair);
+
+    const mintSignature = await connection.sendRawTransaction(tx.serialize(), {
+      skipPreflight: false,
+      preflightCommitment: "processed",
+      maxRetries: 5
+    });
 
     return json(res, 200, {
       ok: true,
+      submitted: true,
       mintAddress: mintKeypair.publicKey.toBase58(),
       mintSignature,
-      createMintSignature,
-      createAtaSignature,
-      creatorTokenAccount: ata.toBase58(),
+      creatorTokenAccount: creatorAta.toBase58(),
       tokenName: String(tokenName),
       tokenSymbol: String(tokenSymbol),
-      tokenDescription: String(tokenDescription || ""),
+      tokenDescription: String(tokenDescription || "")
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
