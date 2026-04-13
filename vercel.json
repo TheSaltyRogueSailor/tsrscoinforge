@@ -1,5 +1,10 @@
 {
   "framework": "vite",
   "buildCommand": "npm install && npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "functions": {
+    "api/mint-real.ts": {
+      "maxDuration": 60
+    }
+  }
 }
