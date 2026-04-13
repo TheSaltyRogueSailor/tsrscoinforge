@@ -330,21 +330,61 @@ export default async function handler(req: any, res: any) {
       return json(res, 400, { error: "Required 0.1 SOL fee was not found in transaction" });
     }
 
-    const { mintKeypair, createMintSignature } = await createMintWithFreshKeypair(
-      connection,
-      payer
-    );
+    const mintKeypair = Keypair.generate();
 
-    const { ata, createAtaSignature } = await ensureAta(
-      connection,
-      payer,
-      mintKeypair.publicKey,
-      creator
-    );
+const mintRent = await getMinimumBalanceForRentExemptMint(connection);
 
-    const amount = parseSupply(String(tokenSupply));
+const creatorAta = await getAssociatedTokenAddress(
+  mintKeypair.publicKey,
+  creator,
+  false,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID
+);
 
-    const mintSignature = await mintToWithRetry(
+const amount = parseSupply(String(tokenSupply));
+
+const tx = new Transaction().add(
+  SystemProgram.createAccount({
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: mintKeypair.publicKey,
+    space: MINT_SIZE,
+    lamports: mintRent,
+    programId: TOKEN_PROGRAM_ID,
+  }),
+  createInitializeMintInstruction(
+    mintKeypair.publicKey,
+    DECIMALS,
+    payer.publicKey,
+    payer.publicKey
+  ),
+  createAssociatedTokenAccountInstruction(
+    payer.publicKey,
+    creatorAta,
+    creator,
+    mintKeypair.publicKey,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  ),
+  createMintToInstruction(
+    mintKeypair.publicKey,
+    creatorAta,
+    payer.publicKey,
+    amount,
+    [],
+    TOKEN_PROGRAM_ID
+  )
+);
+
+const mintSignature = await sendAndConfirmTransaction(
+  connection,
+  tx,
+  [payer, mintKeypair],
+  { commitment: "confirmed" }
+);
+
+const createMintSignature = mintSignature;
+const createAtaSignature = mintSignature;
       connection,
       payer,
       mintKeypair.publicKey,
