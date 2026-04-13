@@ -22,11 +22,6 @@ import {
   createMintToInstruction
 } from "@solana/spl-token";
 
-import {
-  createCreateMetadataAccountV3Instruction,
-  PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID
-} from "@metaplex-foundation/mpl-token-metadata";
-
 import bs58 from "bs58";
 
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
@@ -65,17 +60,6 @@ function parseSupply(raw: string): bigint {
   return whole * MULTIPLIER;
 }
 
-function getMetadataPDA(mint: PublicKey): PublicKey {
-  return PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("metadata"),
-      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      mint.toBuffer()
-    ],
-    TOKEN_METADATA_PROGRAM_ID
-  )[0];
-}
-
 async function waitForParsedTransaction(connection: Connection, signature: string) {
   for (let i = 0; i < 15; i++) {
     const parsedTx = await connection.getParsedTransaction(signature, {
@@ -83,9 +67,7 @@ async function waitForParsedTransaction(connection: Connection, signature: strin
       commitment: "confirmed"
     });
 
-    if (parsedTx) {
-      return parsedTx;
-    }
+    if (parsedTx) return parsedTx;
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
@@ -168,7 +150,6 @@ export default async function handler(req: any, res: any) {
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
-    const metadataPDA = getMetadataPDA(mintKeypair.publicKey);
     const amount = parseSupply(String(tokenSupply));
     const latestBlockhash = await connection.getLatestBlockhash("processed");
 
@@ -178,7 +159,7 @@ export default async function handler(req: any, res: any) {
     });
 
     tx.add(
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 400000 }),
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 300000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 200000 })
     );
 
@@ -217,36 +198,7 @@ export default async function handler(req: any, res: any) {
         mintKeypair.publicKey,
         creatorAta,
         payer.publicKey,
-        amount,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
-
-    tx.add(
-      createCreateMetadataAccountV3Instruction(
-        {
-          metadata: metadataPDA,
-          mint: mintKeypair.publicKey,
-          mintAuthority: payer.publicKey,
-          payer: payer.publicKey,
-          updateAuthority: payer.publicKey
-        },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: String(tokenName),
-              symbol: String(tokenSymbol),
-              uri: "https://arweave.net/123",
-              sellerFeeBasisPoints: 0,
-              creators: null,
-              collection: null,
-              uses: null
-            },
-            isMutable: true,
-            collectionDetails: null
-          }
-        }
+        amount
       )
     );
 
@@ -260,8 +212,12 @@ export default async function handler(req: any, res: any) {
 
     return json(res, 200, {
       success: true,
-      mint: mintKeypair.publicKey.toBase58(),
-      tx: mintSignature
+      mintAddress: mintKeypair.publicKey.toBase58(),
+      mintSignature,
+      creatorTokenAccount: creatorAta.toBase58(),
+      tokenName: String(tokenName),
+      tokenSymbol: String(tokenSymbol),
+      tokenDescription: String(tokenDescription || "")
     });
   } catch (err: any) {
     return json(res, 500, { error: err.message || String(err) });
