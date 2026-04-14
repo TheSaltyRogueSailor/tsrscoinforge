@@ -7,7 +7,7 @@ import {
 } from "@solana/web3.js";
 
 const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
-const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
+const FEE_WALLET =  "FU12ZM5rStqY4ReJH544Vhrk1ztJGQcrEEGLeWEDT79h";
 const LAUNCH_FEE_SOL = 0.1;
 
 document.body.innerHTML = `
