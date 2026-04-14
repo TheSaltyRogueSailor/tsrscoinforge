@@ -211,9 +211,29 @@ solscanLinks.innerHTML = `
 `;
 
 coinResult.appendChild(solscanLinks);
-    const imageUrl = URL.createObjectURL(imageFile);
-    resultImage.src = imageUrl;
-    resultImage.style.display = "block";
+  const imageUrl = URL.createObjectURL(imageFile);
+resultImage.src = imageUrl;
+resultImage.style.display = "block";
+
+await fetch("/api/launches", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    tokenName,
+    tokenSymbol,
+    tokenDescription,
+    tokenSupply,
+    mintAddress: mintData.mintAddress,
+    mintSignature: mintData.mintSignature,
+    feeSignature,
+    imageUrl
+  })
+});
+
+coinResult.style.display = "block";
+
 
     coinResult.style.display = "block";
   } catch (err) {
