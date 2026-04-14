@@ -20,6 +20,9 @@ document.body.innerHTML = `
   <hr />
 
   <h2>Create Coin</h2>
+<hr />
+<h2>Recent Launches</h2>
+<div id="recentLaunches"></div>
 
   <input id="tokenName" placeholder="Token Name" />
   <br /><br />
@@ -119,7 +122,46 @@ async function sendLaunchFee(): Promise<string> {
 
   return signature;
 }
+async function loadRecentLaunches() {
+  const recentLaunches = document.getElementById("recentLaunches") as HTMLDivElement;
+  if (!recentLaunches) return;
 
+  const res = await fetch("/api/launches");
+  const data = await res.json();
+
+  const launches = data.launches || [];
+
+  if (!launches.length) {
+    recentLaunches.innerHTML = "<p>No launches yet.</p>";
+    return;
+  }
+
+  recentLaunches.innerHTML = launches
+    .map((launch: any) => {
+      const tokenUrl = `https://solscan.io/token/${launch.mintAddress}`;
+      const txUrl = `https://solscan.io/tx/${launch.mintSignature}`;
+
+      return `
+        <div style="border:1px solid #ccc; padding:12px; margin-bottom:12px;">
+          <p><strong>Name:</strong> ${launch.tokenName}</p>
+          <p><strong>Symbol:</strong> ${launch.tokenSymbol}</p>
+          <p><strong>Supply:</strong> ${launch.tokenSupply}</p>
+          <p><strong>Description:</strong> ${launch.tokenDescription}</p>
+          <p><strong>Mint:</strong> ${launch.mintAddress}</p>
+          <p><a href="${tokenUrl}" target="_blank">🔍 View Token</a></p>
+          <p><a href="${txUrl}" target="_blank">📄 View Mint Tx</a></p>
+          ${
+            launch.imageUrl
+              ? `<img src="${launch.imageUrl}" style="max-width:120px; display:block; margin-top:8px;" />`
+              : ""
+          }
+          <p style="margin-top:8px; font-size:12px; color:#666;">${launch.createdAt}</p>
+        </div>
+      `;
+    })
+    .join("");
+}
+loadRecentLaunches();
 connectBtn.onclick = async () => {
   try {
     const provider = await ensurePhantom();
