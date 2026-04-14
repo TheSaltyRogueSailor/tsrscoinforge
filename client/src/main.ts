@@ -273,7 +273,7 @@ await fetch("/api/launches", {
     imageUrl
   })
 });
-
+await loadRecentLaunches();
 coinResult.style.display = "block";
 
 
