@@ -200,7 +200,17 @@ if (!mintRes.ok) {
     resultCA.innerText = "CA / Mint Address: " + mintData.mintAddress;
     resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
     resultMintTx.innerText = "Mint Tx: " + mintData.mintSignature;
+const solscanMint = `https://solscan.io/token/${mintData.mintAddress}`;
+const solscanTx = `https://solscan.io/tx/${mintData.mintSignature}`;
 
+const solscanLinks = document.createElement("div");
+solscanLinks.innerHTML = `
+  <br/>
+  <a href="${solscanMint}" target="_blank">🔍 View Token on Solscan</a><br/>
+  <a href="${solscanTx}" target="_blank">📄 View Mint Transaction</a>
+`;
+
+coinResult.appendChild(solscanLinks);
     const imageUrl = URL.createObjectURL(imageFile);
     resultImage.src = imageUrl;
     resultImage.style.display = "block";
