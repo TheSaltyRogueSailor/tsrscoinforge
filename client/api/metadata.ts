@@ -34,7 +34,7 @@ export default async function handler(req: any, res: any) {
     return json(res, 400, { error: "Missing mint" });
   }
 
-  const launch = launches.find((item) => item.mintAddress === mint);
+const launch = getLaunches().find((item) => item.mintAddress === mint);
 
   if (!launch) {
     return json(res, 404, { error: "Metadata not found" });
