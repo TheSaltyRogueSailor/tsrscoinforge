@@ -21,7 +21,7 @@ function json(res: any, status: number, body: unknown) {
 
 export default async function handler(req: any, res: any) {
   if (req.method === "GET") {
-    return json(res, 200, { launches });
+   return json(res, 200, { launches: getLaunches() });
   }
 
   if (req.method === "POST") {
