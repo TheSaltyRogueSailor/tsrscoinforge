@@ -210,9 +210,8 @@ export default async function handler(req: any, res: any) {
       maxRetries: 5
     });
 
-   const mintAddress = mintKeypair.publicKey.toBase58();
-const metadataUrl = `${req.headers.origin || "https://tsrscoinforge.com"}/api/metadata?mint=${mintAddress}`;
-
+const mintAddress = mintKeypair.publicKey.toBase58();
+const metadataUrl = `${req.headers.origin || "https://tsrscoinforge.com"}/api/metadata?mint=${mintAddress}&name=${encodeURIComponent(String(tokenName))}&symbol=${encodeURIComponent(String(tokenSymbol))}&description=${encodeURIComponent(String(tokenDescription || ""))}&supply=${encodeURIComponent(String(tokenSupply))}`;
 
 return json(res, 200, {
   success: true,
@@ -224,6 +223,7 @@ return json(res, 200, {
   tokenDescription: String(tokenDescription || ""),
   metadataUrl
 });
+
 
   } catch (err: any) {
     return json(res, 500, { error: err.message || String(err) });
