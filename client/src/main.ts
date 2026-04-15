@@ -11,50 +11,84 @@ const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
 const LAUNCH_FEE_SOL = 0.1;
 
 document.body.innerHTML = `
-  <h1>TSRS Coin Forge 🚀</h1>
-  <p>Frontend is LIVE</p>
+  <div style="min-height:100vh; background:#0b1020; color:#f8fafc; font-family:Arial,sans-serif; padding:32px;">
+    <div style="max-width:1100px; margin:0 auto;">
 
-  <button id="connectWallet">Connect Phantom Wallet</button>
-  <p id="walletAddress"></p>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
+        <div>
+          <h1 style="margin:0; font-size:40px; line-height:1.1;">TSRS Coin Forge ⚓</h1>
+          <p style="margin:8px 0 0 0; color:#94a3b8; font-size:16px;">
+            Launch Solana tokens with real minting, live feed, and instant proof links.
+          </p>
+        </div>
+        <div style="text-align:right;">
+          <button id="connectWallet" style="background:#2563eb; color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:bold; cursor:pointer;">
+            Connect Phantom Wallet
+          </button>
+          <p id="walletAddress" style="margin:10px 0 0 0; color:#cbd5e1; font-size:14px;"></p>
+        </div>
+      </div>
 
-  <hr />
+      <div style="background:linear-gradient(135deg,#111827,#1e293b); border:1px solid #334155; border-radius:20px; padding:28px; margin-bottom:28px;">
+        <h2 style="margin:0 0 12px 0; font-size:28px;">Create Your Coin</h2>
+        <p style="margin:0 0 24px 0; color:#94a3b8;">
+          Create a real Solana token from TSRS Coin Forge. Launch fee: 0.1 SOL.
+        </p>
 
-  <h2>Create Coin</h2>
-<hr />
-<h2>Recent Launches</h2>
-<div id="recentLaunches"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Token Name</label>
+            <input id="tokenName" placeholder="Token Name" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white;" />
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Token Symbol</label>
+            <input id="tokenSymbol" placeholder="Token Symbol" maxlength="10" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white;" />
+          </div>
+        </div>
 
-  <input id="tokenName" placeholder="Token Name" />
-  <br /><br />
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Total Supply</label>
+            <input id="tokenSupply" placeholder="Total Supply" type="number" min="1" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white;" />
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Coin Image</label>
+            <input id="tokenImage" type="file" accept="image/*" style="width:100%; padding:10px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white;" />
+          </div>
+        </div>
 
-  <input id="tokenSymbol" placeholder="Token Symbol" maxlength="10" />
-  <br /><br />
+        <div style="margin-bottom:20px;">
+          <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Description</label>
+          <textarea id="tokenDescription" placeholder="Coin Description" rows="4" cols="50" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white; resize:vertical;"></textarea>
+        </div>
 
-  <input id="tokenSupply" placeholder="Total Supply" type="number" min="1" />
-  <br /><br />
+        <button id="createCoin" style="background:#16a34a; color:white; border:none; padding:14px 22px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer;">
+          Create Coin
+        </button>
+        <p id="createStatus" style="margin-top:14px; color:#fbbf24; font-size:14px;"></p>
+      </div>
 
-  <textarea id="tokenDescription" placeholder="Coin Description" rows="4" cols="50"></textarea>
-  <br /><br />
+      <div id="coinResult" style="display:none; background:#111827; border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px;">
+        <h3 style="margin-top:0; font-size:24px;">Coin Created ✅</h3>
+        <p id="resultName"></p>
+        <p id="resultSymbol"></p>
+        <p id="resultSupply"></p>
+        <p id="resultDescription"></p>
+        <p id="resultCA"></p>
+        <p id="resultFeeTx"></p>
+        <p id="resultMintTx"></p>
+        <img id="resultImage" style="max-width:200px; display:none; margin-top:12px; border-radius:14px; border:1px solid #334155;" />
+      </div>
 
-  <label for="tokenImage">Coin Image:</label>
-  <input id="tokenImage" type="file" accept="image/*" />
-  <br /><br />
+      <div style="background:#111827; border:1px solid #334155; border-radius:20px; padding:24px;">
+        <h2 style="margin-top:0; font-size:28px;">Recent Launches</h2>
+        <div id="recentLaunches"></div>
+      </div>
 
-  <button id="createCoin">Create Coin</button>
-  <p id="createStatus"></p>
-
-  <div id="coinResult" style="display:none; margin-top:16px;">
-    <h3>Coin Created ✅</h3>
-    <p id="resultName"></p>
-    <p id="resultSymbol"></p>
-    <p id="resultSupply"></p>
-    <p id="resultDescription"></p>
-    <p id="resultCA"></p>
-    <p id="resultFeeTx"></p>
-    <p id="resultMintTx"></p>
-    <img id="resultImage" style="max-width:200px; display:none; margin-top:12px;" />
+    </div>
   </div>
 `;
+
 
 const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement;
 const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement;
