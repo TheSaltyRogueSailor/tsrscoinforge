@@ -184,23 +184,39 @@ async function loadRecentLaunches() {
       const tokenUrl = `https://solscan.io/token/${launch.mintAddress}`;
       const txUrl = `https://solscan.io/tx/${launch.mintSignature}`;
 
-      return `
-        <div style="border:1px solid #ccc; padding:12px; margin-bottom:12px;">
-          <p><strong>Name:</strong> ${launch.tokenName}</p>
-          <p><strong>Symbol:</strong> ${launch.tokenSymbol}</p>
-          <p><strong>Supply:</strong> ${launch.tokenSupply}</p>
-          <p><strong>Description:</strong> ${launch.tokenDescription}</p>
-          <p><strong>Mint:</strong> ${launch.mintAddress}</p>
-          <p><a href="${tokenUrl}" target="_blank">🔍 View Token</a></p>
-          <p><a href="${txUrl}" target="_blank">📄 View Mint Tx</a></p>
-          ${
-            launch.imageUrl
-              ? `<img src="${launch.imageUrl}" style="max-width:120px; display:block; margin-top:8px;" />`
-              : ""
-          }
-          <p style="margin-top:8px; font-size:12px; color:#666;">${launch.createdAt}</p>
+     return `
+  <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:18px; padding:18px; margin-bottom:16px; box-shadow:0 10px 25px rgba(0,0,0,0.18);">
+    <div style="display:grid; grid-template-columns:1fr 180px; gap:18px; align-items:start;">
+      <div>
+        <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Name:</strong> ${launch.tokenName}</p>
+        <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Symbol:</strong> ${launch.tokenSymbol}</p>
+        <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Supply:</strong> ${launch.tokenSupply}</p>
+        <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Description:</strong> ${launch.tokenDescription}</p>
+        <p style="margin:0 0 12px 0; color:#e2e8f0; word-break:break-all;"><strong>Mint:</strong> ${launch.mintAddress}</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <a href="${tokenUrl}" target="_blank" style="text-decoration:none; background:#2563eb; color:white; padding:10px 14px; border-radius:10px; font-weight:bold; font-size:14px;">
+            🔍 View Token
+          </a>
+          <a href="${txUrl}" target="_blank" style="text-decoration:none; background:#16a34a; color:white; padding:10px 14px; border-radius:10px; font-weight:bold; font-size:14px;">
+            📄 View Mint Tx
+          </a>
         </div>
-      `;
+
+        <p style="margin-top:14px; font-size:12px; color:#94a3b8;">${launch.createdAt}</p>
+      </div>
+
+      <div style="text-align:center;">
+        ${
+          launch.imageUrl
+            ? `<img src="${launch.imageUrl}" style="width:100%; max-width:180px; border-radius:16px; border:1px solid #334155;" />`
+            : ""
+        }
+      </div>
+    </div>
+  </div>
+`;
+
     })
     .join("");
 }
