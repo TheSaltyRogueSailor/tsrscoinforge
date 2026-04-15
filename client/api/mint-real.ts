@@ -212,6 +212,16 @@ export default async function handler(req: any, res: any) {
 
    const mintAddress = mintKeypair.publicKey.toBase58();
 const metadataUrl = `${req.headers.origin || "https://tsrscoinforge.com"}/api/metadata?mint=${mintAddress}`;
+rememberLaunch({
+  tokenName: String(tokenName),
+  tokenSymbol: String(tokenSymbol),
+  tokenDescription: String(tokenDescription || ""),
+  tokenSupply: String(tokenSupply),
+  mintAddress,
+  mintSignature,
+  imageUrl: "",
+  createdAt: new Date().toISOString()
+});
 
 return json(res, 200, {
   success: true,
