@@ -11,7 +11,7 @@ import {
   Transaction,
   ComputeBudgetProgram
 } from "@solana/web3.js";
-import { rememberLaunch } from "./metadata.ts";
+
 import {
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
