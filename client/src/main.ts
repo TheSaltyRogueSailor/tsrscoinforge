@@ -68,17 +68,26 @@ document.body.innerHTML = `
         <p id="createStatus" style="margin-top:14px; color:#fbbf24; font-size:14px;"></p>
       </div>
 
-      <div id="coinResult" style="display:none; background:#111827; border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px;">
-        <h3 style="margin-top:0; font-size:24px;">Coin Created ✅</h3>
-        <p id="resultName"></p>
-        <p id="resultSymbol"></p>
-        <p id="resultSupply"></p>
-        <p id="resultDescription"></p>
-        <p id="resultCA"></p>
-        <p id="resultFeeTx"></p>
-        <p id="resultMintTx"></p>
-        <img id="resultImage" style="max-width:200px; display:none; margin-top:12px; border-radius:14px; border:1px solid #334155;" />
-      </div>
+      <div id="coinResult" style="display:none; background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+  <h3 style="margin:0 0 18px 0; font-size:24px; color:#f8fafc;">Coin Created ✅</h3>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
+    <div>
+      <p id="resultName" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+      <p id="resultSymbol" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+      <p id="resultSupply" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+      <p id="resultDescription" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+      <p id="resultCA" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+      <p id="resultFeeTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+      <p id="resultMintTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+    </div>
+
+    <div style="text-align:center;">
+      <img id="resultImage" style="max-width:220px; width:100%; display:none; margin-top:12px; border-radius:18px; border:1px solid #334155;" />
+    </div>
+  </div>
+</div>
+
 
       <div style="background:#111827; border:1px solid #334155; border-radius:20px; padding:24px;">
         <h2 style="margin-top:0; font-size:28px;">Recent Launches</h2>
