@@ -34,26 +34,31 @@ export default async function handler(req: any, res: any) {
     return json(res, 400, { error: "Missing mint" });
   }
 
-const launch = getLaunches().find((item) => item.mintAddress === mint);
+const name = String(req.query?.name || "").trim();
+const symbol = String(req.query?.symbol || "").trim();
+const description = String(req.query?.description || "").trim();
+const image = String(req.query?.image || "").trim();
+const supply = String(req.query?.supply || "").trim();
 
-  if (!launch) {
-    return json(res, 404, { error: "Metadata not found" });
-  }
+if (!name || !symbol) {
+  return json(res, 404, { error: "Metadata not found" });
+}
 
-  return json(res, 200, {
-    name: launch.tokenName,
-    symbol: launch.tokenSymbol,
-    description: launch.tokenDescription,
-    image: launch.imageUrl,
-    attributes: [
-      {
-        trait_type: "Supply",
-        value: launch.tokenSupply
-      },
-      {
-        trait_type: "Mint Address",
-        value: launch.mintAddress
-      }
-    ]
-  });
+return json(res, 200, {
+  name,
+  symbol,
+  description,
+  image,
+  attributes: [
+    {
+      trait_type: "Supply",
+      value: supply
+    },
+    {
+      trait_type: "Mint Address",
+      value: mint
+    }
+  ]
+});
+
 }
