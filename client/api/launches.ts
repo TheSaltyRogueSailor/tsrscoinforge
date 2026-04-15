@@ -3,12 +3,21 @@ export const config = {
   maxDuration: 60
 };
 
-let launches: any[] = [];
+const globalStore = globalThis as any;
+
+if (!globalStore.__tsrsLaunches) {
+  globalStore.__tsrsLaunches = [];
+}
+
+function getLaunches() {
+  return globalStore.__tsrsLaunches as any[];
+}
 
 function json(res: any, status: number, body: unknown) {
   res.status(status).setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
 }
+
 
 export default async function handler(req: any, res: any) {
   if (req.method === "GET") {
