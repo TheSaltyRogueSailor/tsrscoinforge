@@ -40,11 +40,14 @@ export default async function handler(req: any, res: any) {
       createdAt: new Date().toISOString()
     };
 
-    launches.unshift(launch);
+  const launches = getLaunches();
 
-    if (launches.length > 50) {
-      launches = launches.slice(0, 50);
-    }
+launches.unshift(launch);
+
+if (launches.length > 50) {
+  globalStore.__tsrsLaunches = launches.slice(0, 50);
+}
+
 
     return json(res, 200, { ok: true, launch });
   }
