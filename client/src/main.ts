@@ -254,7 +254,7 @@ createBtn.onclick = async () => {
       return;
     }
 
-    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+    createStatus.innerText = "Approve the 0.1 SOL launch fee in Phantom to continue...";
 
     const feeSignature = await sendLaunchFee();
 
