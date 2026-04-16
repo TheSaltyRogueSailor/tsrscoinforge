@@ -32,7 +32,7 @@ document.body.innerHTML = `
       <div style="background:linear-gradient(135deg,#111827,#1e293b); border:1px solid #334155; border-radius:20px; padding:28px; margin-bottom:28px;">
         <h2 style="margin:0 0 12px 0; font-size:28px;">Create Your Coin</h2>
         <p style="margin:0 0 24px 0; color:#94a3b8;">
-          Create a real Solana token from TSRS Coin Forge. Launch fee: 0.1 SOL.
+         Create a real Solana token from TSRS Coin Forge. Launch fee: 0.1 SOL paid on launch.
         </p>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
