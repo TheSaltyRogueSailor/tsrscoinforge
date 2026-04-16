@@ -63,7 +63,7 @@ document.body.innerHTML = `
         </div>
 
         <button id="createCoin" style="background:#16a34a; color:white; border:none; padding:14px 22px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer;">
-          Create Coin
+          Create Coin • Pay 0.1 SOL
         </button>
         <p id="createStatus" style="margin-top:14px; color:#fbbf24; font-size:14px;"></p>
       </div>
