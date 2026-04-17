@@ -211,7 +211,7 @@ async function loadRecentLaunches() {
           </a>
         </div>
 
-        <p style="margin-top:14px; font-size:12px; color:#94a3b8;">${launch.createdAt}</p>
+       <p style="margin-top:14px; font-size:12px; color:#94a3b8;"><strong>Created:</strong> ${launch.createdAt}</p>
       </div>
 
       <div style="text-align:center;">
