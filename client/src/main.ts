@@ -317,8 +317,7 @@ createBtn.onclick = async () => {
     const solscanLinks = document.createElement("div");
     solscanLinks.innerHTML = `
       <br/><br/>
-      <a href="${solscanMint}" target="_blank">🔍 View Token on Solscan</a><br/>
-      <a href="${solscanTx}" target="_blank">📄 View Mint Transaction</a>
+  <a href="${solscanTx}" target="_blank" style="display:inline-block; margin-top:8px; padding:10px 14px; background:#22c55e; color:white; text-decoration:none; border-radius:10px; font-weight:bold;">📄 View Mint Transaction</a>    
     `;
 
     const oldLinks = coinResult.querySelector(".solscan-links");
