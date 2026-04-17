@@ -301,7 +301,7 @@ createBtn.onclick = async () => {
       throw new Error(mintData?.error || "Mint failed");
     }
 
-    createStatus.innerText = "Real token minted successfully.";
+   createStatus.innerText = "Launch complete. Your real Solana token is live and saved to launch history.";
 
     resultName.innerText = "Name: " + tokenName;
     resultSymbol.innerText = "Symbol: " + tokenSymbol;
