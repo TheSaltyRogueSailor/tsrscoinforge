@@ -334,14 +334,16 @@ createBtn.onclick = async () => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        tokenName,
-        tokenSymbol,
-        tokenDescription,
-        tokenSupply,
-        mintAddress: mintData.mintAddress,
-        mintSignature: mintData.mintSignature,
-        feeSignature,
-        imageUrl
+      tokenName,
+tokenSymbol,
+tokenDescription,
+tokenSupply,
+mintAddress: mintData.mintAddress,
+mintSignature: mintData.mintSignature,
+feeSignature,
+imageUrl,
+metadataUrl: mintData.metadataUrl || ""
+
       })
     });
 
