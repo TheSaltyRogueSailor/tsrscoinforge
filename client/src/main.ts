@@ -1,3 +1,4 @@
+import logoImage from "./assets/TSRSCOIN.FORGE logo.png";
 import {
   Connection,
   PublicKey,
@@ -8,19 +9,23 @@ import {
 
 const ALCHEMY_RPC_URL = "https://solana-mainnet.g.alchemy.com/v2/VpKm0MUizuIShAsvvW2rJ";
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
-const LAUNCH_FEE_SOL = 0.1;
+const LAUNCH_FEE_SOL = 0.05;
 
 document.body.innerHTML = `
   <div style="min-height:100vh; background:#0b1020; color:#f8fafc; font-family:Arial,sans-serif; padding:32px;">
     <div style="max-width:1100px; margin:0 auto;">
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
-        <div>
-          <h1 style="margin:0; font-size:40px; line-height:1.1;">TSRS Coin Forge ⚓</h1>
-          <p style="margin:8px 0 0 0; color:#94a3b8; font-size:16px;">
-            Launch Solana tokens with real minting, live feed, and instant proof links.
-          </p>
-        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+  <img src="${logoImage}" alt="TSRS Coin Forge" style="width:88px; height:88px; object-fit:contain; border-radius:16px;" />
+  <div>
+    <h1 style="margin:0; font-size:40px; line-height:1.1;">TSRS Coin Forge ⚓</h1>
+    <p style="margin:8px 0 0 0; color:#94a3b8; font-size:16px;">
+      Launch Solana tokens with real minting, live feed, and instant proof links.
+    </p>
+  </div>
+</div>
+
         <div style="text-align:right;">
           <button id="connectWallet" style="background:#2563eb; color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:bold; cursor:pointer;">
             Connect Phantom Wallet
@@ -32,7 +37,7 @@ document.body.innerHTML = `
       <div style="background:linear-gradient(135deg,#111827,#1e293b); border:1px solid #334155; border-radius:20px; padding:28px; margin-bottom:28px;">
         <h2 style="margin:0 0 12px 0; font-size:28px;">Create Your Coin</h2>
         <p style="margin:0 0 24px 0; color:#94a3b8;">
-          Create a real Solana token from TSRS Coin Forge. Launch fee: 0.1 SOL.
+          Create a real Solana token from TSRS Coin Forge. Launch fee: 0.05 SOL paid on launch.
         </p>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
@@ -63,31 +68,30 @@ document.body.innerHTML = `
         </div>
 
         <button id="createCoin" style="background:#16a34a; color:white; border:none; padding:14px 22px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer;">
-          Create Coin
+          Create Coin • Pay 0.05 SOL
         </button>
         <p id="createStatus" style="margin-top:14px; color:#fbbf24; font-size:14px;"></p>
       </div>
 
       <div id="coinResult" style="display:none; background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
-  <h3 style="margin:0 0 18px 0; font-size:24px; color:#f8fafc;">Coin Created ✅</h3>
+        <h3 style="margin:0 0 18px 0; font-size:24px; color:#f8fafc;">Coin Created ✅</h3>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
-    <div>
-      <p id="resultName" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
-      <p id="resultSymbol" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
-      <p id="resultSupply" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
-      <p id="resultDescription" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
-      <p id="resultCA" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
-      <p id="resultFeeTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
-      <p id="resultMintTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
-    </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
+          <div>
+            <p id="resultName" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+            <p id="resultSymbol" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+            <p id="resultSupply" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+            <p id="resultDescription" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
+            <p id="resultCA" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+            <p id="resultFeeTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+            <p id="resultMintTx" style="margin:0 0 10px 0; color:#e2e8f0; word-break:break-all;"></p>
+          </div>
 
-    <div style="text-align:center;">
-      <img id="resultImage" style="max-width:220px; width:100%; display:none; margin-top:12px; border-radius:18px; border:1px solid #334155;" />
-    </div>
-  </div>
-</div>
-
+          <div style="text-align:center;">
+            <img id="resultImage" style="max-width:220px; width:100%; display:none; margin-top:12px; border-radius:18px; border:1px solid #334155;" />
+          </div>
+        </div>
+      </div>
 
       <div style="background:#111827; border:1px solid #334155; border-radius:20px; padding:24px;">
         <h2 style="margin-top:0; font-size:28px;">Recent Launches</h2>
@@ -97,7 +101,6 @@ document.body.innerHTML = `
     </div>
   </div>
 `;
-
 
 const connectBtn = document.getElementById("connectWallet") as HTMLButtonElement;
 const walletAddress = document.getElementById("walletAddress") as HTMLParagraphElement;
@@ -165,6 +168,7 @@ async function sendLaunchFee(): Promise<string> {
 
   return signature;
 }
+
 async function loadRecentLaunches() {
   const recentLaunches = document.getElementById("recentLaunches") as HTMLDivElement;
   if (!recentLaunches) return;
@@ -184,7 +188,7 @@ async function loadRecentLaunches() {
       const tokenUrl = `https://solscan.io/token/${launch.mintAddress}`;
       const txUrl = `https://solscan.io/tx/${launch.mintSignature}`;
 
-     return `
+      return `
   <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:18px; padding:18px; margin-bottom:16px; box-shadow:0 10px 25px rgba(0,0,0,0.18);">
     <div style="display:grid; grid-template-columns:1fr 180px; gap:18px; align-items:start;">
       <div>
@@ -216,11 +220,12 @@ async function loadRecentLaunches() {
     </div>
   </div>
 `;
-
     })
     .join("");
 }
+
 loadRecentLaunches();
+
 connectBtn.onclick = async () => {
   try {
     const provider = await ensurePhantom();
@@ -254,9 +259,13 @@ createBtn.onclick = async () => {
       return;
     }
 
-    createStatus.innerText = "Waiting for 0.1 SOL launch fee approval...";
+    createStatus.innerText = "Approve the 0.05 SOL launch fee in Phantom to continue...";
 
     const feeSignature = await sendLaunchFee();
+
+    if (!feeSignature) {
+      throw new Error("Launch fee was not completed.");
+    }
 
     createStatus.innerText = "Fee submitted. Minting real token...";
 
@@ -275,18 +284,14 @@ createBtn.onclick = async () => {
       })
     });
 
-  const mintText = await mintRes.text();
+    const mintText = await mintRes.text();
 
-let mintData: any;
-try {
-  mintData = JSON.parse(mintText);
-} catch {
-  throw new Error("Backend error: " + mintText);
-}
-
-if (!mintRes.ok) {
-  throw new Error(mintData?.error || "Mint failed");
-}
+    let mintData: any;
+    try {
+      mintData = JSON.parse(mintText);
+    } catch {
+      throw new Error("Backend error: " + mintText);
+    }
 
     if (!mintRes.ok) {
       throw new Error(mintData?.error || "Mint failed");
@@ -301,41 +306,45 @@ if (!mintRes.ok) {
     resultCA.innerText = "CA / Mint Address: " + mintData.mintAddress;
     resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
     resultMintTx.innerText = "Mint Tx: " + mintData.mintSignature;
-const solscanMint = `https://solscan.io/token/${mintData.mintAddress}`;
-const solscanTx = `https://solscan.io/tx/${mintData.mintSignature}`;
 
-const solscanLinks = document.createElement("div");
-solscanLinks.innerHTML = `
-  <br/>
-  <a href="${solscanMint}" target="_blank">🔍 View Token on Solscan</a><br/>
-  <a href="${solscanTx}" target="_blank">📄 View Mint Transaction</a>
-`;
+    const solscanMint = `https://solscan.io/token/${mintData.mintAddress}`;
+    const solscanTx = `https://solscan.io/tx/${mintData.mintSignature}`;
 
-coinResult.appendChild(solscanLinks);
-  const imageUrl = URL.createObjectURL(imageFile);
-resultImage.src = imageUrl;
-resultImage.style.display = "block";
+    const solscanLinks = document.createElement("div");
+    solscanLinks.innerHTML = `
+      <br/><br/>
+      <a href="${solscanMint}" target="_blank">🔍 View Token on Solscan</a><br/>
+      <a href="${solscanTx}" target="_blank">📄 View Mint Transaction</a>
+    `;
 
-await fetch("/api/launches", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    tokenName,
-    tokenSymbol,
-    tokenDescription,
-    tokenSupply,
-    mintAddress: mintData.mintAddress,
-    mintSignature: mintData.mintSignature,
-    feeSignature,
-    imageUrl
-  })
-});
-await loadRecentLaunches();
-coinResult.style.display = "block";
+    const oldLinks = coinResult.querySelector(".solscan-links");
+    if (oldLinks) oldLinks.remove();
+    solscanLinks.className = "solscan-links";
 
+    const imageUrl = URL.createObjectURL(imageFile);
+    resultImage.src = imageUrl;
+    resultImage.style.display = "block";
 
+    await fetch("/api/launches", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        tokenName,
+        tokenSymbol,
+        tokenDescription,
+        tokenSupply,
+        mintAddress: mintData.mintAddress,
+        mintSignature: mintData.mintSignature,
+        feeSignature,
+        imageUrl
+      })
+    });
+
+    await loadRecentLaunches();
+
+    coinResult.appendChild(solscanLinks);
     coinResult.style.display = "block";
   } catch (err) {
     createStatus.innerText = "Create failed: " + getErrorMessage(err);

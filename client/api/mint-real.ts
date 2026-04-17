@@ -25,7 +25,7 @@ import {
 import bs58 from "bs58";
 
 const FEE_WALLET = "9kkjHiAYFryfFVuWfBY9XuvrEVdCGZmWqhUnRGwreso8";
-const REQUIRED_FEE_LAMPORTS = 100_000_000;
+const REQUIRED_FEE_LAMPORTS = 50_000_000; // 0.05 SOL
 const DECIMALS = 9;
 const MULTIPLIER = 1_000_000_000n;
 
@@ -136,7 +136,7 @@ export default async function handler(req: any, res: any) {
     const feeOk = feeWasPaid(parsedTx, String(creatorWallet).trim());
 
     if (!feeOk) {
-      return json(res, 400, { error: "Required 0.1 SOL fee was not found in transaction" });
+      return json(res, 400, { error: "Required 0.05 SOL fee was not found in transaction" });
     }
 
     const mintKeypair = Keypair.generate();
@@ -210,21 +210,19 @@ export default async function handler(req: any, res: any) {
       maxRetries: 5
     });
 
-const mintAddress = mintKeypair.publicKey.toBase58();
-const metadataUrl = `${req.headers.origin || "https://tsrscoinforge.com"}/api/metadata?mint=${mintAddress}&name=${encodeURIComponent(String(tokenName))}&symbol=${encodeURIComponent(String(tokenSymbol))}&description=${encodeURIComponent(String(tokenDescription || ""))}&supply=${encodeURIComponent(String(tokenSupply))}`;
+    const mintAddress = mintKeypair.publicKey.toBase58();
+    const metadataUrl = `${req.headers.origin || "https://tsrscoinforge.com"}/api/metadata?mint=${mintAddress}&name=${encodeURIComponent(String(tokenName))}&symbol=${encodeURIComponent(String(tokenSymbol))}&description=${encodeURIComponent(String(tokenDescription || ""))}&supply=${encodeURIComponent(String(tokenSupply))}`;
 
-return json(res, 200, {
-  success: true,
-  mintAddress,
-  mintSignature,
-  creatorTokenAccount: creatorAta.toBase58(),
-  tokenName: String(tokenName),
-  tokenSymbol: String(tokenSymbol),
-  tokenDescription: String(tokenDescription || ""),
-  metadataUrl
-});
-
-
+    return json(res, 200, {
+      success: true,
+      mintAddress,
+      mintSignature,
+      creatorTokenAccount: creatorAta.toBase58(),
+      tokenName: String(tokenName),
+      tokenSymbol: String(tokenSymbol),
+      tokenDescription: String(tokenDescription || ""),
+      metadataUrl
+    });
   } catch (err: any) {
     return json(res, 500, { error: err.message || String(err) });
   }
