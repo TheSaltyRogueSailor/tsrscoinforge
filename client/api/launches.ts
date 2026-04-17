@@ -48,8 +48,10 @@ export default async function handler(req: any, res: any) {
         mintAddress: row.mint_address || "",
         mintSignature: row.mint_signature || "",
         feeSignature: row.fee_signature || "",
-        imageUrl: row.image_url || "",
-        createdAt: row.created_at || ""
+       imageUrl: row.image_url || "",
+metadataUrl: row.metadata_url || "",
+createdAt: row.created_at || ""
+
       }));
 
       return json(res, 200, { launches });
