@@ -16,12 +16,16 @@ document.body.innerHTML = `
     <div style="max-width:1100px; margin:0 auto;">
 
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
-        <div>
-          <h1 style="margin:0; font-size:40px; line-height:1.1;">TSRS Coin Forge ⚓</h1>
-          <p style="margin:8px 0 0 0; color:#94a3b8; font-size:16px;">
-            Launch Solana tokens with real minting, live feed, and instant proof links.
-          </p>
-        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+  <img src="${logoImage}" alt="TSRS Coin Forge" style="width:88px; height:88px; object-fit:contain; border-radius:16px;" />
+  <div>
+    <h1 style="margin:0; font-size:40px; line-height:1.1;">TSRS Coin Forge ⚓</h1>
+    <p style="margin:8px 0 0 0; color:#94a3b8; font-size:16px;">
+      Launch Solana tokens with real minting, live feed, and instant proof links.
+    </p>
+  </div>
+</div>
+
         <div style="text-align:right;">
           <button id="connectWallet" style="background:#2563eb; color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:bold; cursor:pointer;">
             Connect Phantom Wallet
