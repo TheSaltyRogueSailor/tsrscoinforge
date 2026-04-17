@@ -3,32 +3,47 @@ export const config = {
   maxDuration: 60
 };
 
-const globalStore = globalThis as any;
+import fs from "fs";
+import path from "path";
 
-if (!globalStore.__tsrsLaunches) {
-  globalStore.__tsrsLaunches = [];
-}
-
-function getLaunches() {
-  return globalStore.__tsrsLaunches as any[];
-}
+const LAUNCHES_FILE = path.join(process.cwd(), "launches.json");
 
 function json(res: any, status: number, body: unknown) {
   res.status(status).setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
 }
 
+function readLaunches() {
+  try {
+    if (!fs.existsSync(LAUNCHES_FILE)) {
+      fs.writeFileSync(LAUNCHES_FILE, "[]", "utf8");
+    }
+
+    const raw = fs.readFileSync(LAUNCHES_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+function writeLaunches(launches: any[]) {
+  fs.writeFileSync(LAUNCHES_FILE, JSON.stringify(launches, null, 2), "utf8");
+}
 
 export default async function handler(req: any, res: any) {
   if (req.method === "GET") {
-   return json(res, 200, { launches: getLaunches() });
+    const launches = readLaunches();
+    return json(res, 200, { launches });
   }
 
   if (req.method === "POST") {
     const body = req.body ?? {};
+    const launches = readLaunches();
 
     const launch = {
-      id: Date.now().toString(),
       tokenName: String(body.tokenName || ""),
       tokenSymbol: String(body.tokenSymbol || ""),
       tokenDescription: String(body.tokenDescription || ""),
@@ -37,17 +52,13 @@ export default async function handler(req: any, res: any) {
       mintSignature: String(body.mintSignature || ""),
       feeSignature: String(body.feeSignature || ""),
       imageUrl: String(body.imageUrl || ""),
-      createdAt: new Date().toISOString()
+      createdAt: String(body.createdAt || new Date().toISOString())
     };
 
-  const launches = getLaunches();
+    launches.unshift(launch);
 
-launches.unshift(launch);
-
-if (launches.length > 50) {
-  globalStore.__tsrsLaunches = launches.slice(0, 50);
-}
-
+    const trimmed = launches.slice(0, 100);
+    writeLaunches(trimmed);
 
     return json(res, 200, { ok: true, launch });
   }
