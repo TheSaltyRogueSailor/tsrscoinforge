@@ -71,6 +71,10 @@ document.body.innerHTML = `
           Create Coin • Pay 0.05 SOL
         </button>
         <p id="createStatus" style="margin-top:14px; color:#fbbf24; font-size:14px;"></p>
+      <p style="margin-top:10px; color:#94a3b8; font-size:13px;">
+  Launch fee is paid directly to TSRS Coin Forge. Mint proof and launch history are saved automatically.
+</p>
+
       </div>
 
       <div id="coinResult" style="display:none; background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
