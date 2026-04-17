@@ -1,3 +1,4 @@
+import logoImage from "./assets/TSRSCOIN.FORGE logo.png";
 import {
   Connection,
   PublicKey,
