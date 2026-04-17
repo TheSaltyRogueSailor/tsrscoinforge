@@ -31,7 +31,7 @@ export default async function handler(req: any, res: any) {
   try {
     if (req.method === "GET") {
       const response = await supabaseRequest(
-        "/rest/v1/launches?select=token_name,token_symbol,token_description,token_supply,mint_address,mint_signature,fee_signature,image_url,created_at&order=created_at.desc&limit=50"
+  "/rest/v1/launches?select=token_name,token_symbol,token_description,token_supply,mint_address,mint_signature,fee_signature,image_url,metadata_url,created_at&order=created_at.desc&limit=50"
       );
 
       const data = await response.json();
