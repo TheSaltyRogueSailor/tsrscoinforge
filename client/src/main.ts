@@ -271,7 +271,7 @@ createBtn.onclick = async () => {
       throw new Error("Launch fee was not completed.");
     }
 
-    createStatus.innerText = "Fee submitted. Minting real token...";
+    createStatus.innerText = "Launch fee confirmed. Minting your real Solana token now...";
 
     const mintRes = await fetch("/api/mint-real", {
       method: "POST",
