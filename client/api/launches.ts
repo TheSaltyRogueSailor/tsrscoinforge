@@ -68,8 +68,10 @@ createdAt: row.created_at || ""
         mint_address: String(body.mintAddress || ""),
         mint_signature: String(body.mintSignature || ""),
         fee_signature: String(body.feeSignature || ""),
-        image_url: String(body.imageUrl || ""),
-        created_at: String(body.createdAt || new Date().toISOString())
+      image_url: String(body.imageUrl || ""),
+metadata_url: String(body.metadataUrl || ""),
+created_at: String(body.createdAt || new Date().toISOString())
+
       };
 
       const response = await supabaseRequest("/rest/v1/launches", {
