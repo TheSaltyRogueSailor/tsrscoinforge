@@ -8,12 +8,13 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "@solana/web3.js": "^1.98.2",
-    "@solana/spl-token": "^0.4.8",
-    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
-    "bs58": "^6.0.0"
-  },
+"dependencies": {
+  "@solana/web3.js": "^1.98.2",
+  "@solana/spl-token": "^0.4.8",
+  "@solana/wallet-adapter-wallets": "^0.19.32",
+  "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+  "bs58": "^6.0.0"
+},
   "devDependencies": {
     "vite": "^5.0.0"
   }
