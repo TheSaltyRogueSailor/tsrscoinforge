@@ -58,7 +58,7 @@ document.body.innerHTML = `
           </div>
           <div>
             <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Coin Image</label>
-            <input id="tokenImage" type="file" accept="image/*" style="width:100%; padding:10px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white;" />
+     <input id="tokenImage" type="file" accept="image/*" style="width:100%; padding:10px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:#cbd5e1; overflow:hidden;" />
           </div>
         </div>
 
