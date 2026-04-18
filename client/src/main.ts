@@ -217,7 +217,7 @@ async function loadRecentLaunches() {
       <div style="text-align:center;">
         ${
           launch.imageUrl
-  <img src="${launch.imageUrl}" style="max-width:140px; width:100%; border-radius:16px; border:1px solid #334155;" onerror="this.remove()" />    
+ <img src="${launch.imageUrl}" style="max-width:140px; width:100%; border-radius:16px; border:1px solid #334155;" />  
             : ""
         }
       </div>
