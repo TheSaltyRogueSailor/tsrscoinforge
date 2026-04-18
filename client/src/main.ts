@@ -92,7 +92,7 @@ document.body.innerHTML = `
           </div>
 
           <div style="text-align:center;">
-            <img id="resultImage" style="max-width:220px; width:100%; display:none; margin-top:4px; border-radius:18px; border:1px solid #334155;" />
+        <img id="resultImage" style="max-width:220px; width:100%; display:none; margin:0 auto; border-radius:18px; border:1px solid #334155;" />
           </div>
         </div>
       </div>
