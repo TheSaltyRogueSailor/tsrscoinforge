@@ -308,7 +308,7 @@ createBtn.onclick = async () => {
     resultSupply.innerText = "Supply: " + tokenSupply;
     resultDescription.innerText = "Description: " + tokenDescription;
     resultCA.innerText = "CA / Mint Address: " + mintData.mintAddress;
-    resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature;
+    resultFeeTx.innerText = "Launch Fee Tx: " + feeSignature.slice(0, 12) + "..." + feeSignature.slice(-12);
    resultMintTx.innerText += "\nMetadata URL: " + (mintData.metadataUrl || "Not available");
 
     const solscanMint = `https://solscan.io/token/${mintData.mintAddress}`;
