@@ -64,7 +64,7 @@ document.body.innerHTML = `
 
         <div style="margin-bottom:20px;">
           <label style="display:block; margin-bottom:8px; color:#cbd5e1;">Description</label>
-          <textarea id="tokenDescription" placeholder="Coin Description" rows="4" cols="50" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:white; resize:vertical;"></textarea>
+<textarea id="tokenDescription" placeholder="Coin Description" rows="4" cols="50" style="width:100%; padding:12px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:#f8fafc; resize:vertical;"></textarea>
         </div>
 
         <button id="createCoin" style="background:#16a34a; color:white; border:none; padding:14px 22px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer;">
