@@ -80,7 +80,7 @@ document.body.innerHTML = `
       <div id="coinResult" style="display:none; background:linear-gradient(135deg,#0f172a,#1e293b); border:1px solid #334155; border-radius:20px; padding:24px; margin-bottom:28px; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
       <h3 style="margin:0 0 10px 0; font-size:24px; color:#f8fafc;">Coin Created ✅</h3>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; align-items:start;">
           <div>
             <p id="resultName" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
             <p id="resultSymbol" style="margin:0 0 10px 0; color:#e2e8f0;"></p>
