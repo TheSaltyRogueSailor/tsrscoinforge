@@ -15,7 +15,7 @@ document.body.innerHTML = `
   <div style="min-height:100vh; background:#0b1020; color:#f8fafc; font-family:Arial,sans-serif; padding:32px;">
     <div style="max-width:1100px; margin:0 auto;">
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:32px;">
         <div style="display:flex; align-items:center; gap:16px;">
   <img src="${logoImage}" alt="TSRS Coin Forge" style="width:88px; height:88px; object-fit:contain; border-radius:16px;" />
   <div>
