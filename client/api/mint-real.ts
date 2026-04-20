@@ -133,7 +133,7 @@ export default async function handler(req: any, res: any) {
         TOKEN_METADATA_PROGRAM_ID.toBuffer(),
         mintKeypair.publicKey.toBuffer()
       ],
-      TOKEN_METADATA_PROGRAM_ID
+    mpl.PROGRAM_ID
     );
 
     const tx = new Transaction();
