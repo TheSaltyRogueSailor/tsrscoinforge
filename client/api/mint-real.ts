@@ -193,7 +193,7 @@ export default async function handler(req: any, res: any) {
               creators: [
                 {
                   address: payer.publicKey,
-                  verified: true,
+                  verified: false,
                   share: 100
                 }
               ],
