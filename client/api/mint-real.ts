@@ -188,7 +188,7 @@ export default async function handler(req: any, res: any) {
             data: {
               name: String(tokenName).slice(0, 32),
               symbol: String(tokenSymbol).slice(0, 10),
-              uri: metadataUrl,
+             uri: metadataUrl.slice(0, 200),
               sellerFeeBasisPoints: 0,
               creators: [
                 {
