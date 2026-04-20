@@ -30,7 +30,7 @@ document.body.innerHTML = `
   <button id="connectWallet" style="background:#2563eb; color:white; border:none; padding:12px 18px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; width:100%; max-width:340px;">      
             Connect Phantom Wallet
           </button>
-         <p id="walletAddress" style="margin:10px 0 0 0; color:#cbd5e1; font-size:14px; font-weight:600;"></p>
+         <p id="walletAddress" style="margin:10px 0 0 0; color:#cbd5e1; font-size:14px; font-weight:600; display:inline-block; background:#0f172a; padding:8px 12px; border-radius:999px; border:1px solid #334155;"></p>
         </div>
       </div>
 
