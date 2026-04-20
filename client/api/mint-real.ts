@@ -15,7 +15,7 @@ import {
   createAssociatedTokenAccountInstruction,
   createMintToInstruction
 } from "@solana/spl-token";
-import * as mpl from "@metaplex-foundation/mpl-token-metadata";
+
 import bs58 from "bs58";
 
 export const config = {
@@ -171,38 +171,6 @@ export default async function handler(req: any, res: any) {
       )
     );
 
-    tx.add(
-    mpl.createCreateMetadataAccountV3Instruction(
-        {
-          metadata: metadataPda,
-          mint: mintKeypair.publicKey,
-          mintAuthority: payer.publicKey,
-          payer: payer.publicKey,
-          updateAuthority: payer.publicKey
-        },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: String(tokenName).slice(0, 32),
-              symbol: String(tokenSymbol).slice(0, 10),
-             uri: metadataUrl,
-              sellerFeeBasisPoints: 0,
-              creators: [
-                {
-                  address: payer.publicKey,
-                  verified: false,
-                  share: 100
-                }
-              ],
-              collection: null,
-              uses: null
-            },
-            isMutable: true,
-            collectionDetails: null
-          }
-        }
-      )
-    );
 
     tx.add(
       createAssociatedTokenAccountInstruction(
