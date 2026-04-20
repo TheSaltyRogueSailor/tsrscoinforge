@@ -127,14 +127,6 @@ export default async function handler(req: any, res: any) {
       normalizeImageUrl(req, String(imageUrl || ""))
     )}`;
 
-    const [metadataPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("metadata"),
-        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-        mintKeypair.publicKey.toBuffer()
-      ],
-    mpl.PROGRAM_ID
-    );
 
     const tx = new Transaction();
 
