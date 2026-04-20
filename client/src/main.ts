@@ -234,7 +234,7 @@ loadRecentLaunches();
 connectBtn.onclick = async () => {
   try {
     const provider = await ensurePhantom();
-    walletAddress.innerText = "Connected: " + provider.publicKey.toString();
+   walletAddress.innerText = "Connected Wallet: " + provider.publicKey.toString().slice(0, 6) + "..." + provider.publicKey.toString().slice(-6);
   } catch (err) {
     walletAddress.innerText = "Wallet connection failed: " + getErrorMessage(err);
   }
