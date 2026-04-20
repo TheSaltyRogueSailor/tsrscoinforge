@@ -48,7 +48,7 @@ return json(res, 200, {
   name,
   symbol,
   description,
-  image,
+ image: image || "https://tsrscoinforge.com/logo.png",
   attributes: [
     {
       trait_type: "Supply",
