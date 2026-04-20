@@ -15,10 +15,7 @@ import {
   createAssociatedTokenAccountInstruction,
   createMintToInstruction
 } from "@solana/spl-token";
-import {
-  PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
-  createCreateMetadataAccountV3Instruction
-} from "@metaplex-foundation/mpl-token-metadata";
+import * as mpl from "@metaplex-foundation/mpl-token-metadata";
 import bs58 from "bs58";
 
 export const config = {
