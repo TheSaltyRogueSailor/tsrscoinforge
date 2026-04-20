@@ -200,7 +200,7 @@ async function loadRecentLaunches() {
         <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Symbol:</strong> ${launch.tokenSymbol}</p>
         <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Supply:</strong> ${launch.tokenSupply}</p>
         <p style="margin:0 0 8px 0; color:#e2e8f0;"><strong>Description:</strong> ${launch.tokenDescription}</p>
-  <p style="margin:0 0 12px 0; color:#e2e8f0; word-break:break-all;"><strong>Metadata:</strong> ${launch.metadataUrl ? `<a href="${launch.metadataUrl}" target="_blank" style="color:#38bdf8; text-decoration:none;">View metadata</a>` : "Not saved yet"}</p>
+<p style="margin:0 0 12px 0; color:#e2e8f0;"><strong>Metadata:</strong> ${launch.metadataUrl ? `<a href="${launch.metadataUrl}" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block;">View metadata</a>` : "Not saved yet"}</p>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
           <a href="${tokenUrl}" target="_blank" style="text-decoration:none; background:#2563eb; color:white; padding:10px 14px; border-radius:10px; font-weight:bold; font-size:14px;">
