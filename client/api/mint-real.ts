@@ -172,7 +172,7 @@ export default async function handler(req: any, res: any) {
     );
 
     tx.add(
-      createCreateMetadataAccountV3Instruction(
+    mpl.createCreateMetadataAccountV3Instruction(
         {
           metadata: metadataPda,
           mint: mintKeypair.publicKey,
